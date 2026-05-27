@@ -49,10 +49,8 @@
         button.danger { background: #ef4444; }
         .hidden { display: none; }
         
-        /* Carte */
         #map { height: 350px; border-radius: 20px; margin-bottom: 16px; }
         
-        /* Profil */
         .profile-header {
             display: flex;
             gap: 16px;
@@ -73,7 +71,6 @@
         }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Messages */
         .chat-container {
             height: 300px;
             overflow-y: auto;
@@ -98,7 +95,6 @@
         }
         .message small { font-size: 10px; opacity: 0.7; display: block; }
         
-        /* Utilisateur carte */
         .user-card {
             background: #0f172a;
             border-radius: 16px;
@@ -117,7 +113,6 @@
         }
         .user-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Slider rayon */
         .radius-slider {
             display: flex;
             gap: 10px;
@@ -125,7 +120,6 @@
         }
         input[type="range"] { flex: 1; }
         
-        /* Notifications */
         .notification {
             position: fixed;
             bottom: 20px;
@@ -142,7 +136,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
         
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 8px;
@@ -158,7 +151,6 @@
         }
         .tab.active { background: #3b82f6; }
         
-        /* Badges */
         .badge {
             background: #22c55e;
             padding: 4px 10px;
@@ -166,7 +158,6 @@
             font-size: 11px;
         }
         
-        /* Loading */
         .loading {
             text-align: center;
             padding: 40px;
@@ -176,7 +167,6 @@
 </head>
 <body>
 <div class="container">
-    <!-- Écran de connexion -->
     <div id="authScreen">
         <div class="card" style="text-align: center;">
             <h1>📍 Nearby</h1>
@@ -189,9 +179,7 @@
         </div>
     </div>
 
-    <!-- Écran principal -->
     <div id="mainScreen" class="hidden">
-        <!-- Barre supérieure -->
         <div class="card" style="margin-bottom: 0;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="profile-header" style="margin-bottom: 0;">
@@ -208,7 +196,6 @@
             </div>
         </div>
 
-        <!-- Tabs -->
         <div class="card" style="margin-top: 0;">
             <div class="tabs">
                 <div class="tab active" data-tab="map">🗺️ Carte</div>
@@ -216,7 +203,6 @@
                 <div class="tab" data-tab="profile">👤 Profil</div>
             </div>
 
-            <!-- Tab Carte -->
             <div id="mapTab">
                 <div id="gpsStatus" style="background:#1e293b; padding:12px; border-radius:16px; margin-bottom:16px; text-align:center; color:#94a3b8;">
                     📍 Cliquez sur "Activer GPS"
@@ -233,7 +219,6 @@
                 <div id="nearbyList"></div>
             </div>
 
-            <!-- Tab Messages -->
             <div id="messagesTab" class="hidden">
                 <div id="conversationsList" class="loading">Chargement...</div>
                 <div id="chatView" class="hidden">
@@ -247,7 +232,6 @@
                 </div>
             </div>
 
-            <!-- Tab Profil -->
             <div id="profileTab" class="hidden">
                 <input type="text" id="profileName" placeholder="Nom d'utilisateur">
                 <textarea id="profileBio" placeholder="Bio / Description" rows="3"></textarea>
@@ -265,13 +249,11 @@
 
 <script>
 (function() {
-    // ========== CONFIGURATION ==========
     const SUPABASE_URL = 'https://nuijvjnufnaodwtrhjuq.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_Z3l5W3VqqpSeFz6azxmrkw_fAZmT-iH';
     
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // État
     let currentUser = null;
     let currentPosition = null;
     let watchId = null;
@@ -281,7 +263,6 @@
     let userBalance = 0;
     let currentChatWith = null;
     
-    // ========== FONCTIONS GÉNÉRALES ==========
     function showNotification(msg, isError = false) {
         const notif = document.createElement('div');
         notif.className = 'notification';
@@ -306,7 +287,12 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
     
-    // ========== PHOTOS DE PROFIL ==========
+    async function updateBalanceDisplay() {
+        const { data: profile } = await supabase.from('profiles').select('balance').eq('id', currentUser.id).single();
+        userBalance = profile?.balance || 0;
+        document.getElementById('userBalance').innerHTML = `💰 ${userBalance} FCFA`;
+    }
+    
     async function uploadAvatar(file) {
         if (!currentUser) return;
         const ext = file.name.split('.').pop();
@@ -318,10 +304,9 @@
         document.getElementById('profileAvatar').innerHTML = `<img src="${publicUrl}">`;
         showNotification("Photo mise à jour !");
         loadNearbyUsers();
-        return publicUrl;
     }
     
-    // ========== PAIEMENT SIMULÉ ORANGE MONEY ==========
+    // ✅ CORRECTION ICI : Le rechargement ADDITIONNE maintenant
     async function rechargeAccount(amount) {
         if (!currentUser) return;
         const phone = document.getElementById('profilePhone').value;
@@ -330,16 +315,14 @@
             return;
         }
         
-        // Générer code de transaction
         const transactionCode = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
         const rechargeDiv = document.getElementById('rechargeCode');
         
-        // Afficher les instructions
         rechargeDiv.innerHTML = `
             📱 <strong>Instructions Orange Money :</strong><br>
             1. Composez #144#<br>
             2. Envoyez ${amount} FCFA au +226${phone}<br>
-            3. Code transaction: <strong style="color:#22c55e;">${transactionCode}</strong><br>
+            3. Code transaction: <strong style="color:#22c55e; font-size:18px;">${transactionCode}</strong><br>
             4. Entrez le code ci-dessous pour valider<br>
             <input type="text" id="confirmCode" placeholder="Code de transaction" style="margin-top:8px;">
             <button id="confirmPaymentBtn" style="margin-top:4px;">✅ Confirmer paiement</button>
@@ -348,13 +331,15 @@
         document.getElementById('confirmPaymentBtn')?.addEventListener('click', async () => {
             const enteredCode = document.getElementById('confirmCode').value;
             if (enteredCode === transactionCode) {
-                // Mettre à jour le solde
+                // ✅ CORRECTION : on récupère l'ancien solde et on additionne
                 const { data: profile } = await supabase.from('profiles').select('balance').eq('id', currentUser.id).single();
-                const newBalance = (profile?.balance || 0) + amount;
-                await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
-                userBalance = newBalance;
+                const ancienSolde = profile?.balance || 0;
+                const nouveauSolde = ancienSolde + amount;
+                
+                await supabase.from('profiles').update({ balance: nouveauSolde }).eq('id', currentUser.id);
+                userBalance = nouveauSolde;
                 document.getElementById('userBalance').innerHTML = `💰 ${userBalance} FCFA`;
-                showNotification(`✅ ${amount} FCFA ajoutés !`);
+                showNotification(`✅ ${amount} FCFA ajoutés ! Nouveau solde: ${userBalance} FCFA`);
                 rechargeDiv.innerHTML = '';
             } else {
                 showNotification("Code incorrect", true);
@@ -362,17 +347,15 @@
         });
     }
     
-    // ========== DÉBLOQUER AVEC PAIEMENT RÉEL ==========
     async function unlockUser(targetId, targetName, cost = 500) {
         if (userBalance < cost) {
             showNotification(`Solde insuffisant. Il vous faut ${cost} FCFA`, true);
-            document.getElementById('profileTab').click();
+            document.querySelector('.tab[data-tab="profile"]').click();
             return;
         }
         
         if (!confirm(`Débloquer ${targetName} pour ${cost} FCFA ?`)) return;
         
-        // Vérifier si déjà débloqué
         const { data: existing } = await supabase
             .from('unlocks')
             .select('id')
@@ -385,19 +368,16 @@
             return;
         }
         
-        // Débiter le solde
-        const newBalance = userBalance - cost;
-        await supabase.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
-        userBalance = newBalance;
+        const nouveauSolde = userBalance - cost;
+        await supabase.from('profiles').update({ balance: nouveauSolde }).eq('id', currentUser.id);
+        userBalance = nouveauSolde;
         document.getElementById('userBalance').innerHTML = `💰 ${userBalance} FCFA`;
         
-        // Enregistrer le déblocage
         await supabase.from('unlocks').insert({ buyer_id: currentUser.id, target_id: targetId });
         
         showNotification(`✅ ${targetName} débloqué !`);
         loadNearbyUsers();
         
-        // Envoyer une notification à la personne débloquée
         await supabase.from('notifications').insert({
             user_id: targetId,
             from_id: currentUser.id,
@@ -406,12 +386,10 @@
         });
     }
     
-    // ========== MESSAGERIE ==========
     async function loadConversations() {
         const container = document.getElementById('conversationsList');
         container.innerHTML = '<div class="loading">Chargement...</div>';
         
-        // Récupérer les déblocages (les gens qu'on a débloqués)
         const { data: unlocks } = await supabase
             .from('unlocks')
             .select('target_id')
@@ -430,7 +408,7 @@
             .in('id', unlockedIds);
         
         container.innerHTML = profiles?.map(p => `
-            <div class="user-card" data-id="${p.id}" style="cursor:pointer;">
+            <div class="user-card">
                 <div class="user-card-avatar">
                     ${p.avatar_url ? `<img src="${p.avatar_url}">` : '<span style="display:flex;align-items:center;justify-content:center;height:100%;">👤</span>'}
                 </div>
@@ -452,7 +430,6 @@
         document.getElementById('conversationsList').classList.add('hidden');
         document.getElementById('chatView').classList.remove('hidden');
         
-        // Charger les messages
         const { data: messages } = await supabase
             .from('messages')
             .select('*')
@@ -469,7 +446,6 @@
         
         container.scrollTop = container.scrollHeight;
         
-        // S'abonner aux nouveaux messages
         supabase
             .channel(`chat-${userId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${currentUser.id}` }, (payload) => {
@@ -497,7 +473,6 @@
         
         document.getElementById('messageInput').value = '';
         
-        // Ajouter le message à l'affichage
         const container = document.getElementById('chatMessages');
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message sent';
@@ -506,12 +481,11 @@
         container.scrollTop = container.scrollHeight;
     }
     
-    // ========== CARTE ET GÉOLOCALISATION ==========
     function initMap() {
         if (map) return;
         map = L.map('map').setView([12.3714, -1.5197], 13);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+            attribution: '&copy; OpenStreetMap'
         }).addTo(map);
     }
     
@@ -541,7 +515,6 @@
         users.sort((a,b) => a.distance - b.distance);
         nearbyUsers = users;
         
-        // Mettre à jour la carte
         if (map) {
             userMarkers.forEach(m => map.removeLayer(m));
             userMarkers = [];
@@ -566,7 +539,6 @@
             });
         }
         
-        // Liste des utilisateurs
         const listContainer = document.getElementById('nearbyList');
         listContainer.innerHTML = users.map(u => `
             <div class="user-card">
@@ -586,7 +558,7 @@
         
         document.querySelectorAll('.unlock-list-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const cost = parseFloat(btn.textContent.match(/\d+/)[0]);
+                const cost = parseInt(btn.textContent.match(/\d+/)[0]);
                 unlockUser(btn.dataset.id, btn.dataset.name, cost);
             });
         });
@@ -606,7 +578,6 @@
         }, (err) => { showNotification("Erreur GPS", true); });
     }
     
-    // ========== AUTHENTIFICATION ==========
     async function signUp() {
         const email = document.getElementById('email').value;
         const pwd = document.getElementById('password').value;
@@ -645,14 +616,17 @@
             document.getElementById('mainScreen').classList.remove('hidden');
             
             const { data: location } = await supabase.from('locations').select('lat,lng').eq('user_id', currentUser.id).single();
-            if (location) currentPosition = location;
+            if (location) {
+                currentPosition = location;
+                initMap();
+                loadNearbyUsers();
+            }
         } else {
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('mainScreen').classList.add('hidden');
         }
     }
     
-    // ========== INITIALISATION ==========
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('signupBtn').onclick = signUp;
         document.getElementById('loginBtn').onclick = login;
@@ -666,6 +640,9 @@
                 phone: document.getElementById('profilePhone').value
             }).eq('id', currentUser.id);
             showNotification("Profil mis à jour !");
+            if (document.getElementById('profileName').value) {
+                document.getElementById('userName').innerText = document.getElementById('profileName').value;
+            }
         };
         document.getElementById('rechargeBtn').onclick = () => rechargeAccount(parseInt(document.getElementById('rechargeAmount').value));
         document.getElementById('sendMsgBtn').onclick = sendMessage;
@@ -676,7 +653,6 @@
         };
         document.getElementById('avatarInput').onchange = (e) => uploadAvatar(e.target.files[0]);
         
-        // Tabs
         document.querySelectorAll('.tab').forEach(tab => {
             tab.onclick = () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
