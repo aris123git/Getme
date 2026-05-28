@@ -1,4 +1,4 @@
-import { supabase } from './main.js';
+import { supabase } from './supabaseClient.js';
 import { retry } from './utils.js';
 
 export const api = {
