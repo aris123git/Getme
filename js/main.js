@@ -1,6 +1,4 @@
-import supabaseJs from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-const { createClient } = supabaseJs;
-
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { handleAuthChange, login, signUp, logout } from './auth.js';
 import { startGeolocation, stopGeolocation, debouncedLoadNearby } from './map.js';
