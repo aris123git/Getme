@@ -1,4 +1,4 @@
-import { supabase } from './main.js';
+import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
 import { api } from './api.js';
 import { UNLOCK_COST, GPS_OPTIONS, DEFAULT_RADIUS } from './config.js';
