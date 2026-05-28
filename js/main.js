@@ -1,13 +1,11 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { supabase } from './supabaseClient.js';
+import { appState, subscribe } from './state.js';
 import { handleAuthChange, login, signUp, logout } from './auth.js';
 import { startGeolocation, stopGeolocation, debouncedLoadNearby } from './map.js';
 import { loadConversations, sendMessage, closeChat } from './chat.js';
 import { updateProfile, uploadAvatar, refreshBalance, rechargeAccount } from './profile.js';
 import { showNotification, setTabActive } from './ui.js';
 import { debounce } from './utils.js';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Initialisation des écouteurs d'événements
 function initEventListeners() {
@@ -38,17 +36,26 @@ function initEventListeners() {
     }
     
     // Profil
-    document.getElementById('saveProfileBtn').onclick = updateProfile;
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    if (saveProfileBtn) saveProfileBtn.onclick = updateProfile;
+    
     const profileAvatar = document.getElementById('profileAvatar');
     if (profileAvatar) {
         profileAvatar.onclick = () => document.getElementById('avatarInput').click();
     }
-    document.getElementById('avatarInput').onchange = (e) => uploadAvatar(e.target.files[0]);
-    document.getElementById('rechargeBtn').onclick = rechargeAccount;
+    
+    const avatarInput = document.getElementById('avatarInput');
+    if (avatarInput) avatarInput.onchange = (e) => uploadAvatar(e.target.files[0]);
+    
+    const rechargeBtn = document.getElementById('rechargeBtn');
+    if (rechargeBtn) rechargeBtn.onclick = rechargeAccount;
     
     // Chat
-    document.getElementById('sendMsgBtn').onclick = sendMessage;
-    document.getElementById('closeChatBtn').onclick = closeChat;
+    const sendMsgBtn = document.getElementById('sendMsgBtn');
+    if (sendMsgBtn) sendMsgBtn.onclick = sendMessage;
+    
+    const closeChatBtn = document.getElementById('closeChatBtn');
+    if (closeChatBtn) closeChatBtn.onclick = closeChat;
     
     // Tabs
     document.querySelectorAll('.tab').forEach(tab => {
@@ -57,7 +64,7 @@ function initEventListeners() {
             setTabActive(tabName);
             
             if (tabName === 'messages') loadConversations();
-            if (tabName === 'map' && window.map) window.map.invalidateSize();
+            if (tabName === 'map' && appState.map) appState.map.invalidateSize();
             if (tabName === 'profile') refreshBalance();
         };
     });
@@ -71,9 +78,38 @@ function initEventListeners() {
     }
 }
 
+// Abonnement aux changements d'état
+function initStateSubscriptions() {
+    subscribe('balance', (balance) => {
+        const userBalanceEl = document.getElementById('userBalance');
+        const balanceDisplayEl = document.getElementById('balanceDisplay');
+        if (userBalanceEl) userBalanceEl.innerHTML = `💰 ${balance} FCFA`;
+        if (balanceDisplayEl) balanceDisplayEl.innerHTML = balance;
+    });
+    
+    subscribe('position', () => {
+        if (appState.map && appState.position) {
+            appState.map.setView([appState.position.lat, appState.position.lng], 14);
+        }
+    });
+}
+
+// Service Worker pour PWA
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('Service Worker enregistré');
+        }).catch(err => {
+            console.log('Erreur Service Worker:', err);
+        });
+    }
+}
+
 // Initialisation
 async function init() {
     initEventListeners();
+    initStateSubscriptions();
+    registerServiceWorker();
     
     supabase.auth.onAuthStateChange(() => handleAuthChange());
     await handleAuthChange();
