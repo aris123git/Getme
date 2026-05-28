@@ -1,4 +1,3 @@
-// Version corrigée de main.js
 import supabaseJs from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 const { createClient } = supabaseJs;
 
