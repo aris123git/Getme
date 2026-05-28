@@ -1,4 +1,4 @@
-import { supabase } from './main.js';
+import { supabase } from './supabaseClient.js';
 import { appState, setState } from './state.js';
 import { api } from './api.js';
 import { escapeHtml, formatTime } from './utils.js';
