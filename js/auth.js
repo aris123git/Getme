@@ -1,4 +1,4 @@
-import { supabase } from './main.js';
+import { supabase } from './supabaseClient.js';
 import { setState, updateBalance } from './state.js';
 import { showNotification } from './ui.js';
 import { api } from './api.js';
