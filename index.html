@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="theme-color" content="#0f172a">
     <meta name="description" content="Nearby - Rencontrez des personnes proches de vous">
+    <meta name="mobile-web-app-capable" content="yes">
     
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -57,6 +58,7 @@
                 <div class="tab" data-tab="profile">👤 Profil</div>
             </div>
 
+            <!-- Tab Carte -->
             <div id="mapTab">
                 <div id="gpsStatus" class="info-card">📍 Activez votre position</div>
                 <div class="button-group">
@@ -72,6 +74,7 @@
                 <div id="nearbyList"></div>
             </div>
 
+            <!-- Tab Messages -->
             <div id="messagesTab" class="hidden">
                 <div id="conversationsList" class="loading">Chargement...</div>
                 <div id="chatView" class="hidden">
@@ -85,15 +88,19 @@
                 </div>
             </div>
 
+            <!-- Tab Profil -->
             <div id="profileTab" class="hidden">
                 <input type="text" id="profileName" placeholder="Nom d'utilisateur">
                 <textarea id="profileBio" placeholder="Bio" rows="3"></textarea>
-                <input type="tel" id="profilePhone" placeholder="Téléphone">
+                <input type="tel" id="profilePhone" placeholder="Téléphone Orange Money">
                 <button id="saveProfileBtn">💾 Enregistrer</button>
                 <hr>
+                <h3>💰 Recharger mon compte</h3>
+                <input type="number" id="rechargeAmount" placeholder="Montant (FCFA)" value="1000">
+                <button id="rechargeBtn" class="warning">📱 Recharger par Orange Money</button>
+                <div id="rechargeCode" style="margin-top:12px;"></div>
+                <hr>
                 <h3>💰 Solde: <span id="balanceDisplay">0</span> FCFA</h3>
-                <button id="rechargeBtn" class="warning">📱 Recharger</button>
-                <p class="info-text">Paiement Orange Money (bientôt disponible)</p>
             </div>
         </div>
     </div>
