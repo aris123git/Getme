@@ -3,7 +3,7 @@ import { appState, subscribe } from './state.js';
 import { handleAuthChange, login, signUp, logout } from './auth.js';
 import { startGeolocation, stopGeolocation, debouncedLoadNearby } from './map.js';
 import { loadConversations, sendMessage, closeChat } from './chat.js';
-import { updateProfile, uploadAvatar, refreshBalance, rechargeAccount } from './profile.js';
+import { updateProfile, uploadAvatar, refreshBalance, rechargeAccount, unlockUser } from './profile.js';
 import { showNotification, setTabActive } from './ui.js';
 import { debounce } from './utils.js';
 
