@@ -6,8 +6,6 @@ import { validateUsername, compressImage } from './utils.js';
 import { showNotification } from './ui.js';
 import { loadNearbyUsers } from './map.js';
 
-let pendingTransaction = null;
-
 export async function updateProfile() {
     const username = document.getElementById('profileName').value.trim();
     if (!username) {
@@ -84,7 +82,7 @@ export async function rechargeAccount() {
     const phone = document.getElementById('profilePhone').value;
     
     if (!phone) {
-        showNotification("Ajoutez votre numéro Orange Money", true);
+        showNotification("Ajoutez votre numéro de téléphone dans votre profil", true);
         return;
     }
     
@@ -93,124 +91,26 @@ export async function rechargeAccount() {
         return;
     }
     
-    // Générer un code unique
-    const transactionCode = `NR${Date.now()}${Math.floor(Math.random() * 1000)}`;
-    
-    // Afficher les instructions
+    // Afficher les instructions de paiement
     const rechargeDiv = document.getElementById('rechargeCode');
     rechargeDiv.innerHTML = `
         <div style="background:#0f172a; padding:16px; border-radius:16px; margin-top:12px;">
-            <p style="font-weight:bold; margin-bottom:12px;">📱 Instructions Orange Money :</p>
-            <ol style="margin-left:20px; margin-bottom:12px;">
-                <li>Composez <strong>#144#</strong></li>
-                <li>Sélectionnez "Envoyer de l'argent"</li>
-                <li>Numéro : <strong>+226XXXXXXXX</strong></li>
+            <p style="font-weight:bold; margin-bottom:12px;">📱 Instructions de paiement Orange Money :</p>
+            <ol style="margin-left:20px; margin-bottom:12px; line-height:1.8;">
+                <li>Composez <strong>#144#</strong> sur votre téléphone</li>
+                <li>Sélectionnez <strong>"Envoyer de l'argent"</strong></li>
+                <li>Entrez le numéro : <strong>+226XXXXXXXXX</strong> (notre compte)</li>
                 <li>Montant : <strong>${amount} FCFA</strong></li>
-                <li>Référence : <strong>${transactionCode}</strong></li>
+                <li>Confirmez le paiement</li>
             </ol>
-            <button id="checkSmsBtn" style="background:#22c55e;">📲 Vérifier mon SMS</button>
-            <button id="manualCodeBtn" style="background:#475569; margin-top:8px;">✏️ Saisir le code manuellement</button>
-            <p style="font-size:11px; margin-top:12px; color:#94a3b8;">🔐 L'application lira automatiquement votre SMS de confirmation</p>
+            <p style="font-size:13px; color:#22c55e; background:#1e293b; padding:10px; border-radius:12px;">
+                ✅ Une fois votre paiement effectué, votre compte sera automatiquement crédité sous 1 minute.
+            </p>
+            <p style="font-size:11px; margin-top:12px; color:#94a3b8;">
+                📞 En cas de problème, contactez le support avec votre numéro de transaction.
+            </p>
         </div>
     `;
     
-    pendingTransaction = { amount, phone, transactionCode };
-    
-    document.getElementById('checkSmsBtn')?.addEventListener('click', checkSms);
-    document.getElementById('manualCodeBtn')?.addEventListener('click', showManualInput);
-}
-
-async function checkSms() {
-    showNotification("🔍 Lecture du dernier SMS...");
-    
-    // Méthode 1 : API SMS (Android Chrome uniquement)
-    if (navigator.sms) {
-        try {
-            const sms = await navigator.sms.getSms();
-            const lastSms = sms[sms.length - 1];
-            
-            if (lastSms && lastSms.body.includes('Orange Money')) {
-                const result = parseSms(lastSms.body);
-                if (result && result.amount === pendingTransaction.amount) {
-                    await validatePayment(result.transactionId, result.amount);
-                    return;
-                }
-            }
-        } catch (err) {
-            console.log("Erreur lecture SMS:", err);
-        }
-    }
-    
-    // Méthode 2 : Demander à l'utilisateur de coller le SMS
-    showManualInput();
-}
-
-function showManualInput() {
-    const rechargeDiv = document.getElementById('rechargeCode');
-    rechargeDiv.innerHTML += `
-        <div style="margin-top:12px;">
-            <input type="text" id="smsCode" placeholder="Code de transaction" style="width:100%; margin-bottom:8px;">
-            <textarea id="smsFull" placeholder="Ou collez tout le SMS reçu" rows="3" style="width:100%; margin-bottom:8px;"></textarea>
-            <button id="validateManualBtn" style="background:#22c55e;">✅ Valider</button>
-        </div>
-    `;
-    
-    document.getElementById('validateManualBtn')?.addEventListener('click', () => {
-        const code = document.getElementById('smsCode')?.value;
-        const fullText = document.getElementById('smsFull')?.value;
-        const textToParse = fullText || code;
-        
-        if (textToParse) {
-            const result = parseSms(textToParse);
-            if (result) {
-                validatePayment(result.transactionId, result.amount);
-            } else {
-                showNotification("SMS non reconnu", true);
-            }
-        }
-    });
-}
-
-function parseSms(smsText) {
-    // Exemple: "Vous avez reçu 1000 FCFA de +22670123456. Ref: OMPAY123456"
-    const amountMatch = smsText.match(/reçu (\d+) FCFA/);
-    const transactionMatch = smsText.match(/Ref:? ?(\w+)/i);
-    
-    if (amountMatch) {
-        return {
-            amount: parseInt(amountMatch[1]),
-            transactionId: transactionMatch ? transactionMatch[1] : Date.now().toString()
-        };
-    }
-    return null;
-}
-
-async function validatePayment(transactionId, amount) {
-    showNotification("✅ Paiement vérifié !");
-    
-    // Créditer l'utilisateur
-    const { error } = await supabase.rpc('credit_balance', {
-        user_id: appState.user.id,
-        amount: amount
-    });
-    
-    if (error) {
-        showNotification("Erreur technique", true);
-        return;
-    }
-    
-    // Enregistrer la transaction
-    await supabase.from('transactions').insert({
-        user_id: appState.user.id,
-        amount: amount,
-        transaction_id: transactionId,
-        status: 'confirmed'
-    });
-    
-    await refreshBalance();
-    showNotification(`💰 ${amount} FCFA ajoutés !`);
-    
-    // Réinitialiser
-    document.getElementById('rechargeCode').innerHTML = '';
-    pendingTransaction = null;
+    showNotification("Instructions affichées - Effectuez le paiement", false);
 }
