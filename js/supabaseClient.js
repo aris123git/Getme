@@ -15,3 +15,4 @@ export const GPS_OPTIONS = {
     maximumAge: 10000,
     timeout: 10000
 };
+
