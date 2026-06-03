@@ -24,46 +24,61 @@ export function initMap() {
     }
 }
 
-export function clearMarkers() {
-    if (map) {
-        userMarkers.forEach(marker => map.removeLayer(marker));
-        userMarkers = [];
+function updateMapWithUsers(users) {
+    if (!map) {
+        initMap();
+        if (!map) return;
     }
-}
 
-export function updateUserMarker() {
-    if (!map || !appState.position) return;
-    
-    const marker = L.marker([appState.position.lat, appState.position.lng], {
+    // Supprime tous les anciens marqueurs
+    userMarkers.forEach(m => map.removeLayer(m));
+    userMarkers = [];
+
+    // Marqueur pour l'utilisateur courant (toi)
+    const myMarker = L.marker([appState.position.lat, appState.position.lng], {
         icon: L.divIcon({
             html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px #3b82f6;"></div>',
             iconSize: [20, 20]
         })
     }).addTo(map).bindPopup('<b>Vous</b>');
-    userMarkers.push(marker);
+    userMarkers.push(myMarker);
+
+    // Marqueurs pour les autres utilisateurs (seulement si débloqués)
+    users.forEach(u => {
+        if (u.is_unlocked && u.lat && u.lng) {
+            const m = L.marker([u.lat, u.lng]).addTo(map);
+            m.bindPopup(`<b>${escapeHtml(u.username)}</b><br>📏 ${formatDistance(u.distance_km)}`);
+            userMarkers.push(m);
+        }
+    });
+
+    // Centre la carte sur ta position
+    map.setView([appState.position.lat, appState.position.lng], 14);
+    map.invalidateSize();
 }
 
 export async function loadNearbyUsers() {
     if (!appState.position || !appState.user) return;
-    
+
     const radius = parseFloat(document.getElementById('radiusKm')?.value || DEFAULT_RADIUS);
     document.getElementById('radiusValue').innerHTML = `${radius} km`;
-    
+
     const users = await api.getNearbyUsers(
         appState.position.lat,
         appState.position.lng,
         radius,
         appState.user.id
     );
-    
+
     setState('nearbyUsers', users);
-    
+
     const container = document.getElementById('nearbyList');
     if (!users || users.length === 0) {
         container.innerHTML = '<div class="info-card">✨ Personne à proximité</div>';
+        updateMapWithUsers([]);
         return;
     }
-    
+
     container.innerHTML = users.map(u => `
         <div class="user-card">
             <div class="user-card-avatar">
@@ -79,20 +94,11 @@ export async function loadNearbyUsers() {
             }
         </div>
     `).join('');
-    
-    // Mettre à jour la carte
-    clearMarkers();
-    updateUserMarker();
-    
-    users.forEach(u => {
-        if (u.is_unlocked) {
-            const m = L.marker([u.lat, u.lng]).addTo(map);
-            m.bindPopup(`<b>${escapeHtml(u.username)}</b><br>📏 ${formatDistance(u.distance_km)}`);
-            userMarkers.push(m);
-        }
-    });
-    
-    // Attacher événements
+
+    // Met à jour la carte
+    updateMapWithUsers(users);
+
+    // Attacher les événements des boutons
     document.querySelectorAll('.unlock-btn').forEach(btn => {
         btn.removeEventListener('click', window._unlockHandler);
         window._unlockHandler = () => unlockUser(btn.dataset.id, btn.dataset.name);
