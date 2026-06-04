@@ -6,7 +6,7 @@ import { loadConversations, sendMessage, closeChat } from './chat.js';
 import { updateProfile, uploadAvatar, refreshBalance, rechargeAccount, unlockUser } from './profile.js';
 import { showNotification, setTabActive } from './ui.js';
 import { debounce } from './utils.js';
-
+console.log("✅ main.js chargé");
 // Initialisation des écouteurs d'événements
 function initEventListeners() {
     // Auth
