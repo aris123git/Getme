@@ -1,4 +1,4 @@
-import L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
 import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
