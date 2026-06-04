@@ -7,7 +7,6 @@
     <meta name="description" content="Nearby - Rencontrez des personnes proches de vous">
     <meta name="mobile-web-app-capable" content="yes">
     
-    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,11 +14,13 @@
     <meta name="apple-mobile-web-app-title" content="Nearby">
     
     <title>Nearby - Rencontres de proximité</title>
+    
+    <!-- Leaflet CSS (chargement normal) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="container">
-    <!-- Écran de connexion -->
     <div id="authScreen">
         <div class="card auth-card">
             <h1>📍 Nearby</h1>
@@ -32,9 +33,7 @@
         </div>
     </div>
 
-    <!-- Écran principal -->
     <div id="mainScreen" class="hidden">
-        <!-- En-tête -->
         <div class="card header-card">
             <div class="header-content">
                 <div class="profile-header">
@@ -49,7 +48,6 @@
             </div>
         </div>
 
-        <!-- Tabs -->
         <div class="card tabs-card">
             <div class="tabs">
                 <div class="tab active" data-tab="map">🗺️ Carte</div>
@@ -57,7 +55,6 @@
                 <div class="tab" data-tab="profile">👤 Profil</div>
             </div>
 
-            <!-- Tab Carte -->
             <div id="mapTab">
                 <div id="gpsStatus" class="info-card">📍 Activez votre position</div>
                 <div class="button-group">
@@ -73,7 +70,6 @@
                 <div id="nearbyList"></div>
             </div>
 
-            <!-- Tab Messages -->
             <div id="messagesTab" class="hidden">
                 <div id="conversationsList" class="loading">Chargement...</div>
                 <div id="chatView" class="hidden">
@@ -87,7 +83,6 @@
                 </div>
             </div>
 
-            <!-- Tab Profil -->
             <div id="profileTab" class="hidden">
                 <input type="text" id="profileName" placeholder="Nom d'utilisateur">
                 <textarea id="profileBio" placeholder="Bio" rows="3"></textarea>
