@@ -1,5 +1,4 @@
 import L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 
 import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
@@ -31,7 +30,6 @@ function updateMapWithUsers(users) {
     userMarkers.forEach(m => map.removeLayer(m));
     userMarkers = [];
 
-    // Marqueur pour l'utilisateur courant
     const myMarker = L.marker([appState.position.lat, appState.position.lng], {
         icon: L.divIcon({
             html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px #3b82f6;"></div>',
