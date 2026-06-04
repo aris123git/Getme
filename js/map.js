@@ -1,3 +1,8 @@
+// Import Leaflet CSS et JS
+import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+import * as LModule from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+const L = LModule.default || LModule;
+
 import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
 import { api } from './api.js';
@@ -11,24 +16,28 @@ let userMarkers = [];
 
 export function initMap() {
     if (!map && appState.position) {
+        console.log("Création de la carte...");
         map = L.map('map').setView([appState.position.lat, appState.position.lng], 14);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         }).addTo(map);
         setState('map', map);
-    }
-    
-    if (map && appState.position) {
-        map.setView([appState.position.lat, appState.position.lng], 14);
-        map.invalidateSize();
+        
+        map.whenReady(() => {
+            console.log("Carte prête, tuiles chargées");
+            map.invalidateSize();
+        });
     }
 }
 
 function updateMapWithUsers(users) {
     if (!map) {
+        console.log("Carte non initialisée, appel à initMap()");
         initMap();
         if (!map) return;
     }
+
+    console.log("Mise à jour des marqueurs, nombre d'utilisateurs :", users.length);
 
     // Supprime tous les anciens marqueurs
     userMarkers.forEach(m => map.removeLayer(m));
@@ -72,33 +81,32 @@ export async function loadNearbyUsers() {
 
     setState('nearbyUsers', users);
 
+    // Mise à jour de la liste en bas
     const container = document.getElementById('nearbyList');
     if (!users || users.length === 0) {
         container.innerHTML = '<div class="info-card">✨ Personne à proximité</div>';
-        updateMapWithUsers([]);
-        return;
+    } else {
+        container.innerHTML = users.map(u => `
+            <div class="user-card">
+                <div class="user-card-avatar">
+                    ${u.avatar_url ? `<img src="${escapeHtml(u.avatar_url)}">` : '👤'}
+                </div>
+                <div style="flex:1;">
+                    <div class="user-name">${escapeHtml(u.username)}</div>
+                    <div class="user-distance">📏 ${formatDistance(u.distance_km)}</div>
+                </div>
+                ${u.is_unlocked ? 
+                    '<span class="badge">✅ Débloqué</span>' : 
+                    `<button class="unlock-btn" data-id="${u.user_id}" data-name="${escapeHtml(u.username)}">🔓 Débloquer (${UNLOCK_COST} FCFA)</button>`
+                }
+            </div>
+        `).join('');
     }
 
-    container.innerHTML = users.map(u => `
-        <div class="user-card">
-            <div class="user-card-avatar">
-                ${u.avatar_url ? `<img src="${escapeHtml(u.avatar_url)}">` : '👤'}
-            </div>
-            <div style="flex:1;">
-                <div class="user-name">${escapeHtml(u.username)}</div>
-                <div class="user-distance">📏 ${formatDistance(u.distance_km)}</div>
-            </div>
-            ${u.is_unlocked ? 
-                '<span class="badge">✅ Débloqué</span>' : 
-                `<button class="unlock-btn" data-id="${u.user_id}" data-name="${escapeHtml(u.username)}">🔓 Débloquer (${UNLOCK_COST} FCFA)</button>`
-            }
-        </div>
-    `).join('');
-
-    // Met à jour la carte
+    // Mise à jour de la carte
     updateMapWithUsers(users);
 
-    // Attacher les événements des boutons
+    // Attacher les événements aux boutons
     document.querySelectorAll('.unlock-btn').forEach(btn => {
         btn.removeEventListener('click', window._unlockHandler);
         window._unlockHandler = () => unlockUser(btn.dataset.id, btn.dataset.name);
