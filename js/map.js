@@ -1,5 +1,3 @@
-import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-
 import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
 import { api } from './api.js';
@@ -10,7 +8,6 @@ import { unlockUser } from './profile.js';
 
 let map = null;
 let userMarkers = [];
-console.log("✅ main.js chargé");
 
 export function initMap() {
     if (!map && appState.position) {
