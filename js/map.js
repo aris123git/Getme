@@ -1,7 +1,5 @@
-// Import Leaflet CSS et JS
+import L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-import * as LModule from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-const L = LModule.default || LModule;
 
 import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
@@ -16,34 +14,24 @@ let userMarkers = [];
 
 export function initMap() {
     if (!map && appState.position) {
-        console.log("Création de la carte...");
         map = L.map('map').setView([appState.position.lat, appState.position.lng], 14);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         }).addTo(map);
         setState('map', map);
-        
-        map.whenReady(() => {
-            console.log("Carte prête, tuiles chargées");
-            map.invalidateSize();
-        });
     }
 }
 
 function updateMapWithUsers(users) {
     if (!map) {
-        console.log("Carte non initialisée, appel à initMap()");
         initMap();
         if (!map) return;
     }
 
-    console.log("Mise à jour des marqueurs, nombre d'utilisateurs :", users.length);
-
-    // Supprime tous les anciens marqueurs
     userMarkers.forEach(m => map.removeLayer(m));
     userMarkers = [];
 
-    // Marqueur pour l'utilisateur courant (toi)
+    // Marqueur pour l'utilisateur courant
     const myMarker = L.marker([appState.position.lat, appState.position.lng], {
         icon: L.divIcon({
             html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px #3b82f6;"></div>',
@@ -52,7 +40,6 @@ function updateMapWithUsers(users) {
     }).addTo(map).bindPopup('<b>Vous</b>');
     userMarkers.push(myMarker);
 
-    // Marqueurs pour les autres utilisateurs (seulement si débloqués)
     users.forEach(u => {
         if (u.is_unlocked && u.lat && u.lng) {
             const m = L.marker([u.lat, u.lng]).addTo(map);
@@ -61,7 +48,6 @@ function updateMapWithUsers(users) {
         }
     });
 
-    // Centre la carte sur ta position
     map.setView([appState.position.lat, appState.position.lng], 14);
     map.invalidateSize();
 }
@@ -81,32 +67,31 @@ export async function loadNearbyUsers() {
 
     setState('nearbyUsers', users);
 
-    // Mise à jour de la liste en bas
     const container = document.getElementById('nearbyList');
     if (!users || users.length === 0) {
         container.innerHTML = '<div class="info-card">✨ Personne à proximité</div>';
-    } else {
-        container.innerHTML = users.map(u => `
-            <div class="user-card">
-                <div class="user-card-avatar">
-                    ${u.avatar_url ? `<img src="${escapeHtml(u.avatar_url)}">` : '👤'}
-                </div>
-                <div style="flex:1;">
-                    <div class="user-name">${escapeHtml(u.username)}</div>
-                    <div class="user-distance">📏 ${formatDistance(u.distance_km)}</div>
-                </div>
-                ${u.is_unlocked ? 
-                    '<span class="badge">✅ Débloqué</span>' : 
-                    `<button class="unlock-btn" data-id="${u.user_id}" data-name="${escapeHtml(u.username)}">🔓 Débloquer (${UNLOCK_COST} FCFA)</button>`
-                }
-            </div>
-        `).join('');
+        updateMapWithUsers([]);
+        return;
     }
 
-    // Mise à jour de la carte
+    container.innerHTML = users.map(u => `
+        <div class="user-card">
+            <div class="user-card-avatar">
+                ${u.avatar_url ? `<img src="${escapeHtml(u.avatar_url)}">` : '👤'}
+            </div>
+            <div style="flex:1;">
+                <div class="user-name">${escapeHtml(u.username)}</div>
+                <div class="user-distance">📏 ${formatDistance(u.distance_km)}</div>
+            </div>
+            ${u.is_unlocked ? 
+                '<span class="badge">✅ Débloqué</span>' : 
+                `<button class="unlock-btn" data-id="${u.user_id}" data-name="${escapeHtml(u.username)}">🔓 Débloquer (${UNLOCK_COST} FCFA)</button>`
+            }
+        </div>
+    `).join('');
+
     updateMapWithUsers(users);
 
-    // Attacher les événements aux boutons
     document.querySelectorAll('.unlock-btn').forEach(btn => {
         btn.removeEventListener('click', window._unlockHandler);
         window._unlockHandler = () => unlockUser(btn.dataset.id, btn.dataset.name);
