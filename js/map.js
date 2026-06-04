@@ -8,6 +8,7 @@ import { formatDistance, debounce, escapeHtml } from './utils.js';
 import { showNotification } from './ui.js';
 import { unlockUser } from './profile.js';
 
+console.log("✅ main.js chargé");
 let map = null;
 let userMarkers = [];
 
