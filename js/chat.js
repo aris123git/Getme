@@ -75,7 +75,7 @@ export async function startChat(userId, userName) {
                 msgDiv.innerHTML = `${escapeHtml(payload.new.message)}<small>${formatTime(new Date())}</small>`;
                 container.appendChild(msgDiv);
                 container.scrollTop = container.scrollHeight;
-                showNotification(`📩 Message de ${userName}`);
+                showNotification(`📩 Nouveau message de ${userName}`);
             }
         })
         .subscribe();
