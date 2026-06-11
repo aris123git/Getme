@@ -21,30 +21,31 @@ export function initMap() {
 }
 
 // Afficher le profil d'un utilisateur (simplifié)
-async function showUserProfile(userId, username) {
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, bio, avatar_url')
-        .eq('id', userId)
-        .single();
+function showUserProfile(userId, username) {
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0'; modal.style.left = '0';
+    modal.style.width = '100%'; modal.style.height = '100%';
+    modal.style.background = 'rgba(0,0,0,0.8)';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '2000';
     
-    const avatarHtml = profile?.avatar_url 
-        ? `<img src="${profile.avatar_url}" style="width:60px; height:60px; border-radius:50%; object-fit:cover;">` 
-        : '👤';
-    
-    const content = `
-        <div style="text-align:center;">
-            ${avatarHtml}
-            <h3 style="margin:8px 0;">${escapeHtml(profile?.username || username)}</h3>
-            <p style="color:#666;">${escapeHtml(profile?.bio || 'Aucune bio')}</p>
-        </div>
-    `;
-    
-    // Afficher dans une popup simple (améliorable avec une vraie modale)
-    showNotification(`👤 Profil de ${escapeHtml(profile?.username || username)}`, false);
-    alert(content.replace(/<[^>]*>/g, '')); // Version texte temporaire
+    supabase.from('profiles').select('username, bio, avatar_url').eq('id', userId).single()
+        .then(({ data: profile }) => {
+            modal.innerHTML = `
+                <div style="background:#1e293b; padding:24px; border-radius:24px; max-width:300px; text-align:center; color:white;">
+                    ${profile?.avatar_url ? `<img src="${profile.avatar_url}" style="width:80px; height:80px; border-radius:50%; margin-bottom:12px;">` : '<div style="font-size:48px;">👤</div>'}
+                    <h3>${escapeHtml(profile?.username || username)}</h3>
+                    <p>${escapeHtml(profile?.bio || 'Aucune bio')}</p>
+                    <button id="closeModalBtn" style="margin-top:16px; background:#3b82f6;">Fermer</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('closeModalBtn').onclick = () => modal.remove();
+        });
 }
-
 // Ouvrir l'itinéraire Google Maps
 function openDirections(lat, lng) {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
