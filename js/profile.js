@@ -57,24 +57,45 @@ export async function refreshBalance() {
 }
 
 export async function unlockUser(targetId, targetName) {
-    const balance = await refreshBalance();
-    if (balance < UNLOCK_COST) {
-        showNotification(`Solde insuffisant. Besoin de ${UNLOCK_COST} FCFA`, true);
+    // Mode test : pas de vérification de solde
+    // const balance = await refreshBalance();
+    // if (balance < UNLOCK_COST) {
+    //     showNotification(`Solde insuffisant. Besoin de ${UNLOCK_COST} FCFA`, true);
+    //     return;
+    // }
+    
+    if (!confirm(`Débloquer ${targetName} gratuitement ? (Mode test)`)) return;
+    
+    // Vérifier si déjà débloqué
+    const { data: existing } = await supabase
+        .from('unlocks')
+        .select('id')
+        .eq('buyer_id', appState.user.id)
+        .eq('target_id', targetId)
+        .maybeSingle();
+    
+    if (existing) {
+        showNotification("Déjà débloqué !");
         return;
     }
     
-    if (!confirm(`Débloquer ${targetName} pour ${UNLOCK_COST} FCFA ?`)) return;
+    // Enregistrer le déblocage (gratuit)
+    const { error } = await supabase.from('unlocks').insert({ 
+        buyer_id: appState.user.id, 
+        target_id: targetId 
+    });
     
-    const success = await api.unlockUser(appState.user.id, targetId, UNLOCK_COST);
-    
-    if (!success) {
-        showNotification("Erreur lors du déblocage", true);
+    if (error) {
+        showNotification("Erreur technique", true);
+        console.error(error);
         return;
     }
     
-    await refreshBalance();
-    showNotification(`✅ ${targetName} débloqué !`);
+    showNotification(`✅ ${targetName} débloqué gratuitement (mode test)`);
+    
+    // Rafraîchir la liste des personnes proches
     loadNearbyUsers();
+}
 }
 
 export async function rechargeAccount() {
