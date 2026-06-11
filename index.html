@@ -15,11 +15,9 @@
     
     <title>Nearby - Rencontres de proximité</title>
     
-    <!-- Leaflet CSS (chargement normal) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <body>
 <div class="container">
     <div id="authScreen">
@@ -54,6 +52,7 @@
                 <div class="tab active" data-tab="map">🗺️ Carte</div>
                 <div class="tab" data-tab="messages">💬 Messages</div>
                 <div class="tab" data-tab="profile">👤 Profil</div>
+                <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">🛡️ Admin</div>
             </div>
 
             <div id="mapTab">
@@ -66,8 +65,8 @@
                     <span>📏 Rayon:</span>
                     <input type="range" id="radiusKm" min="1" max="20" value="5">
                     <span id="radiusValue">5 km</span>
-                    <button id="centerMapBtn" class="secondary" style="margin-bottom:16px;">🎯 Centrer sur moi</button>
                 </div>
+                <button id="centerMapBtn" class="secondary" style="margin-bottom:16px;">🎯 Centrer sur moi</button>
                 <div id="map"></div>
                 <div id="nearbyList"></div>
             </div>
@@ -88,20 +87,28 @@
             <div id="profileTab" class="hidden">
                 <input type="text" id="profileName" placeholder="Nom d'utilisateur">
                 <textarea id="profileBio" placeholder="Bio" rows="3"></textarea>
-                <input type="tel" id="profilePhone" placeholder="Téléphone Orange Money">
+                <input type="tel" id="profilePhone" placeholder="Téléphone">
+                <select id="profileAvailability">
+                    <option value="now">Disponible maintenant</option>
+                    <option value="today">Disponible aujourd'hui</option>
+                    <option value="week">Disponible cette semaine</option>
+                </select>
                 <button id="saveProfileBtn">💾 Enregistrer</button>
                 <hr>
-                <h3>💰 Recharger mon compte</h3>
-                <input type="number" id="rechargeAmount" placeholder="Montant (FCFA)" value="1000">
-                <button id="rechargeBtn" class="warning hidden">📱 Recharger par Orange Money</button>
-                <div id="rechargeCode" style="margin-top:12px;"></div>
-                <hr>
-                
+                <h3>💰 Solde: <span id="balanceDisplay">0</span> FCFA</h3>
+                <button id="rechargeBtn" class="warning hidden">📱 Recharger</button>
+            </div>
+
+            <div id="adminTab" class="hidden">
+                <h3>Signalements</h3>
+                <div id="reportsList" class="loading">Chargement...</div>
+                <button id="refreshReportsBtn" class="secondary">⟳ Actualiser</button>
             </div>
         </div>
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
