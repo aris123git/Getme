@@ -96,7 +96,6 @@ export async function unlockUser(targetId, targetName) {
     // Rafraîchir la liste des personnes proches
     loadNearbyUsers();
 }
-}
 
 export async function rechargeAccount() {
     const amount = parseInt(document.getElementById('rechargeAmount').value);
