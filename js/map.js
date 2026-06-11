@@ -114,7 +114,14 @@ function updateMapWithUsers(users) {
     map.setView([appState.position.lat, appState.position.lng], 14);
     map.invalidateSize();
 }
-
+export function centerMapOnUser() {
+    if (map && appState.position) {
+        map.setView([appState.position.lat, appState.position.lng], 15);
+        showNotification("📍 Centré sur votre position");
+    } else {
+        showNotification("Position non disponible", true);
+    }
+}
 export async function loadNearbyUsers() {
     if (!appState.position || !appState.user) return;
 
