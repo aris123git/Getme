@@ -67,6 +67,13 @@ function initEventListeners() {
             if (tabName === 'map' && appState.map) appState.map.invalidateSize();
             if (tabName === 'profile') refreshBalance();
         };
+        // Dans la fonction d’activation des onglets (remplace la ligne existante)
+if (tabName === 'map') {
+    document.getElementById('mapTab').classList.remove('hidden');
+    if (map) {
+        setTimeout(() => map.invalidateSize(), 100);
+    }
+}
     });
     
     // Message input - Envoi avec Entrée
