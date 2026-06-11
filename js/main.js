@@ -15,6 +15,7 @@ function initEventListeners() {
         const pwd = document.getElementById('password').value;
         signUp(email, pwd);
     };
+    document.getElementById('centerMapBtn').onclick = centerMapOnUser;
     document.getElementById('loginBtn').onclick = () => {
         const email = document.getElementById('email').value;
         const pwd = document.getElementById('password').value;
