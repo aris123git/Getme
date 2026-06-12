@@ -88,8 +88,9 @@ async function init() {
     initStateSubscriptions();
     registerServiceWorker();
     
+    // Petite pause pour éviter le conflit de verrou
+    await new Promise(r => setTimeout(r, 100));
+    
     supabase.auth.onAuthStateChange(() => handleAuthChange());
     await handleAuthChange();
 }
-
-init();
