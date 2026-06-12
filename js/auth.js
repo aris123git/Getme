@@ -39,24 +39,19 @@ export async function logout() {
 }
 
 export async function handleAuthChange() {
-    const { data: { session } } = await supabase.auth.getSession();
+    // Force la récupération de la session sans attendre
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+        console.warn("Erreur session:", error);
+        return null;
+    }
     
     if (session?.user) {
-        const { data: profile } = await api.getProfile(session.user.id);
-        setState('user', session.user);
-        updateBalance(profile?.balance || 0);
-        
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('mainScreen').classList.remove('hidden');
-        
-        document.getElementById('userName').innerText = profile?.username || session.user.email.split('@')[0];
-        if (profile?.avatar_url) {
-            document.getElementById('profileAvatar').innerHTML = `<img src="${profile.avatar_url}">`;
-        }
-        
+        document.getElementById('userName').innerText = session.user.email.split('@')[0];
         return session.user;
     } else {
-        setState('user', null);
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('mainScreen').classList.add('hidden');
         return null;
