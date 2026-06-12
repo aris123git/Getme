@@ -32,10 +32,10 @@ export function centerMapOnUser() {
 function formatLastSeen(date) {
     if (!date) return "Jamais";
     const diff = Math.floor((new Date() - new Date(date)) / 1000 / 60);
-    if (diff < 5) return "Actif maintenant";
-    if (diff < 60) return `Actif il y a ${diff} min`;
-    if (diff < 1440) return `Actif aujourd'hui`;
-    return `Actif il y a ${Math.floor(diff / 1440)} jours`;
+    if (diff < 5) return "🟢 Actif maintenant";
+    if (diff < 60) return `🟡 Actif il y a ${diff} min`;
+    if (diff < 1440) return `🟠 Actif aujourd'hui`;
+    return `⚫ Actif il y a ${Math.floor(diff / 1440)} jours`;
 }
 
 function getAvailabilityLabel(availability) {
@@ -81,11 +81,11 @@ function updateMapWithUsers(users) {
                 🕐 ${formatLastSeen(u.last_seen)}<br>
                 ${getAvailabilityLabel(u.availability)}<br>
                 <hr style="margin:8px 0;">
-                <button id="popup-chat-${u.user_id}" style="background:#3b82f6; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Message</button>
-                <button id="popup-profile-${u.user_id}" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">👤 Profil</button>
-                <button id="popup-route-${u.user_id}" style="background:#22c55e; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">📍 Itinéraire</button>
-                <button id="popup-report-${u.user_id}" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚨 Signaler</button>
-                <button id="popup-block-${u.user_id}" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚫 Bloquer</button>
+                <button id="popup-chat-${u.user_id}" class="popup-btn" style="background:#3b82f6; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Message</button>
+                <button id="popup-profile-${u.user_id}" class="popup-btn" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">👤 Profil</button>
+                <button id="popup-route-${u.user_id}" class="popup-btn" style="background:#22c55e; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">📍 Itinéraire</button>
+                <button id="popup-report-${u.user_id}" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚨 Signaler</button>
+                <button id="popup-block-${u.user_id}" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚫 Bloquer</button>
             </div>
         `;
         m.bindPopup(popupContent);
