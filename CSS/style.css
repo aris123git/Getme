@@ -374,3 +374,12 @@ h3 {
     margin-bottom: 16px;
     font-size: 16px;
 }
+/* ... ton CSS existant ... */
+#map {
+    height: 350px;
+    width: 100%;
+    background: #e5e7eb; /* couleur temporaire pour voir si le conteneur est là */
+    border-radius: 16px;
+    margin-bottom: 16px;
+}
+/* le reste de ton CSS */
