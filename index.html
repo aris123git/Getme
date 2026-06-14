@@ -3,111 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="theme-color" content="#0f172a">
-    <meta name="description" content="Nearby - Rencontrez des personnes proches de vous">
-    <meta name="mobile-web-app-capable" content="yes">
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Nearby">
-    
-    <title>Nearby - Rencontres de proximité</title>
-    
+    <title>Nearby</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="container">
-    <div id="authScreen">
-        <div class="card auth-card">
-            <h1>📍 Nearby</h1>
-            <p>Rencontrez des personnes proches de vous</p>
-            <div id="authMsg"></div>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Mot de passe">
-            <button id="signupBtn">📝 Créer un compte</button>
-            <button id="loginBtn" class="secondary">🔑 Se connecter</button>
-        </div>
-    </div>
-
-    <div id="mainScreen" class="hidden">
-        <div class="card header-card">
-            <div class="header-content">
-                <div class="profile-header">
-                    <div class="avatar" id="profileAvatar">👤</div>
-                    <input type="file" id="avatarInput" accept="image/*" style="display:none;">
-                    <div>
-                        <span id="userName"></span>
-                        <div id="userBalance">💰 0 FCFA</div>
-                    </div>
-                </div>
-                <button id="logoutBtn" class="danger small">Déconnexion</button>
-            </div>
-        </div>
-
-        <div class="card tabs-card">
-            <div class="tabs">
-                <div class="tab active" data-tab="map">🗺️ Carte</div>
-                <div class="tab" data-tab="messages">💬 Messages</div>
-                <div class="tab" data-tab="profile">👤 Profil</div>
-                <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">🛡️ Admin</div>
-            </div>
-
-            <div id="mapTab">
-                <div id="gpsStatus" class="info-card">📍 Activez votre position</div>
-                <div class="button-group">
-                    <button id="enableGpsBtn">📍 Activer GPS</button>
-                    <button id="stopGpsBtn" class="secondary hidden">🛑 Arrêter</button>
-                </div>
-                <div class="radius-slider">
-                    <span>📏 Rayon:</span>
-                    <input type="range" id="radiusKm" min="1" max="20" value="5">
-                    <span id="radiusValue">5 km</span>
-                </div>
-                <button id="centerMapBtn" class="secondary" style="margin-bottom:16px;">🎯 Centrer sur moi</button>
-                <div id="map"></div>
-                <div id="nearbyList"></div>
-            </div>
-
-            <div id="messagesTab" class="hidden">
-                <div id="conversationsList" class="loading">Chargement...</div>
-                <div id="chatView" class="hidden">
-                    <div id="chatWith"></div>
-                    <div id="chatMessages" class="chat-container"></div>
-                    <div class="chat-input">
-                        <input type="text" id="messageInput" placeholder="Message...">
-                        <button id="sendMsgBtn">📤</button>
-                    </div>
-                    <button id="closeChatBtn" class="secondary">Fermer</button>
-                </div>
-            </div>
-
-            <div id="profileTab" class="hidden">
-                <input type="text" id="profileName" placeholder="Nom d'utilisateur">
-                <textarea id="profileBio" placeholder="Bio" rows="3"></textarea>
-                <input type="tel" id="profilePhone" placeholder="Téléphone">
-                <select id="profileAvailability">
-                    <option value="now">Disponible maintenant</option>
-                    <option value="today">Disponible aujourd'hui</option>
-                    <option value="week">Disponible cette semaine</option>
-                </select>
-                <button id="saveProfileBtn">💾 Enregistrer</button>
-                <hr>
-                <h3>💰 Solde: <span id="balanceDisplay">0</span> FCFA</h3>
-                <button id="rechargeBtn" class="warning hidden">📱 Recharger</button>
-            </div>
-
-            <div id="adminTab" class="hidden">
-                <h3>Signalements</h3>
-                <div id="reportsList" class="loading">Chargement...</div>
-                <button id="refreshReportsBtn" class="secondary">⟳ Actualiser</button>
-            </div>
-        </div>
-    </div>
+<div id="app">
+    <div id="authScreen">...</div>
+    <div id="mainScreen" class="hidden">...</div>
 </div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
