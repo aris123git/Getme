@@ -1,224 +1,383 @@
-import { supabase } from './supabaseClient.js';
-import { appState, setState, updatePosition } from './state.js';
-import { api } from './api.js';
-import { UNLOCK_COST, GPS_OPTIONS, DEFAULT_RADIUS } from './config.js';
-import { formatDistance, debounce, escapeHtml } from './utils.js';
-import { showNotification } from './ui.js';
-import { unlockUser, reportUser, blockUser } from './profile.js';
-import { startChat } from './chat.js';
+/* Image de fond pour toute l'application */
+body {
+    background-image: url('../images/background.jpg');
+    background-size: cover;          /* L'image couvre tout l'écran */
+    background-position: center;     /* Centrée */
+    background-attachment: fixed;    /* Fixe lors du scroll */
+    background-repeat: no-repeat;    /* Pas de répétition */
+}
 
-let map = null;
-let userMarkers = [];
+/* Pour que les cartes restent lisibles, ajoutez un léger fond semi-transparent aux cartes */
+.card {
+    background: rgba(30, 41, 59, 0.85);  /* fond semi-transparent */
+    backdrop-filter: blur(2px);          /* petit flou pour lisibilité */
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-export function initMap() {
-    if (!map && appState.position) {
-        map = L.map('map').setView([appState.position.lat, appState.position.lng], 14);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
-        setState('map', map);
+body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    min-height: 100vh;
+    padding: 16px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Cartes */
+.card {
+    background: #1e293b;
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid #334155;
+}
+
+.auth-card {
+    text-align: center;
+}
+
+.auth-card h1 {
+    color: white;
+    margin-bottom: 8px;
+}
+
+.auth-card p {
+    color: #94a3b8;
+    margin-bottom: 24px;
+}
+
+/* En-tête */
+.header-card {
+    margin-bottom: 0;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    background: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#userName {
+    color: white;
+    font-weight: 600;
+}
+
+#userBalance {
+    font-size: 12px;
+    color: #f59e0b;
+}
+
+/* Formulaires */
+input, textarea {
+    width: 100%;
+    padding: 14px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    color: white;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+/* Boutons */
+button {
+    padding: 14px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+button.secondary {
+    background: #475569;
+}
+
+button.warning {
+    background: #f59e0b;
+}
+
+button.danger {
+    background: #ef4444;
+}
+
+button.small {
+    width: auto;
+    padding: 8px 16px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+/* Tabs */
+.tabs-card {
+    margin-top: 0;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    flex: 1;
+    padding: 12px;
+    background: #334155;
+    text-align: center;
+    border-radius: 16px;
+    cursor: pointer;
+    color: white;
+    transition: background 0.2s;
+}
+
+.tab.active {
+    background: #3b82f6;
+}
+
+/* Slider */
+.radius-slider {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 16px 0;
+    color: white;
+}
+
+input[type="range"] {
+    flex: 1;
+    margin: 0;
+}
+
+/* Carte */
+#map {
+    height: 350px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    background: #0f172a;
+}
+
+/* Cartes utilisateur */
+.user-card {
+    background: #0f172a;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.user-card-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+    background: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.user-card-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-card .user-name {
+    color: white;
+    font-weight: 600;
+}
+
+.user-card .user-distance {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.badge {
+    background: #22c55e;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+/* Chat */
+.chat-container {
+    height: 350px;
+    overflow-y: auto;
+    background: #0f172a;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.message {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 16px;
+    max-width: 80%;
+    word-break: break-word;
+}
+
+.message.sent {
+    background: #3b82f6;
+    margin-left: auto;
+    text-align: right;
+}
+
+.message.received {
+    background: #334155;
+}
+
+.message small {
+    font-size: 10px;
+    opacity: 0.7;
+    display: block;
+}
+
+.chat-input {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-input input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.chat-input button {
+    width: auto;
+    padding: 14px 20px;
+    margin-top: 0;
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    left: 20px;
+    max-width: 350px;
+    margin: 0 auto;
+    background: #22c55e;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 40px;
+    z-index: 1000;
+    text-align: center;
+    animation: slideIn 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.notification.error {
+    background: #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
 }
 
-export function centerMapOnUser() {
-    if (map && appState.position) {
-        map.setView([appState.position.lat, appState.position.lng], 15);
-        showNotification("📍 Centré sur votre position");
-    } else {
-        showNotification("Position non disponible", true);
-    }
+/* États */
+.hidden {
+    display: none;
 }
 
-function formatLastSeen(date) {
-    if (!date) return "Jamais";
-    const diff = Math.floor((new Date() - new Date(date)) / 1000 / 60);
-    if (diff < 5) return "🟢 Actif maintenant";
-    if (diff < 60) return "🟡 Actif il y a " + diff + " min";
-    if (diff < 1440) return "🟠 Actif aujourd'hui";
-    return "⚫ Actif il y a " + Math.floor(diff / 1440) + " jours";
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
 }
 
-function getAvailabilityLabel(availability) {
-    if (availability === 'now') return "🟢 Disponible maintenant";
-    if (availability === 'today') return "📅 Disponible aujourd'hui";
-    if (availability === 'week') return "📆 Disponible cette semaine";
-    return "🟡 Statut inconnu";
+.info-card {
+    background: #1e293b;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    color: #94a3b8;
+    margin-bottom: 16px;
 }
 
-function updateMapWithUsers(users) {
-    if (!map) {
-        initMap();
-        if (!map) return;
-    }
-
-    userMarkers.forEach(m => map.removeLayer(m));
-    userMarkers = [];
-
-    const myMarker = L.marker([appState.position.lat, appState.position.lng], {
-        icon: L.divIcon({
-            html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px #3b82f6;"></div>',
-            iconSize: [20, 20]
-        })
-    }).addTo(map).bindPopup('<b>Vous</b>');
-    userMarkers.push(myMarker);
-
-    users.forEach(u => {
-        if (!u.is_unlocked) return;
-
-        const m = L.marker([u.lat, u.lng], {
-            icon: L.divIcon({
-                html: '<div style="background:#22c55e;width:20px;height:20px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;">' + u.username.charAt(0).toUpperCase() + '</div>',
-                iconSize: [20, 20]
-            })
-        }).addTo(map);
-
-        const popupContent = '<div style="min-width:220px; text-align:center;">' +
-            '<strong style="font-size:16px;">' + escapeHtml(u.username) + '</strong><br>' +
-            '📏 ' + formatDistance(u.distance_km) + '<br>' +
-            '🕐 ' + formatLastSeen(u.last_seen) + '<br>' +
-            getAvailabilityLabel(u.availability) + '<br>' +
-            '<hr style="margin:8px 0;">' +
-            '<button id="popup-chat-' + u.user_id + '" class="popup-btn" style="background:#3b82f6; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Message</button>' +
-            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">👤 Profil</button>' +
-            '<button id="popup-route-' + u.user_id + '" class="popup-btn" style="background:#22c55e; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">📍 Itinéraire</button>' +
-            '<button id="popup-report-' + u.user_id + '" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚨 Signaler</button>' +
-            '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚫 Bloquer</button>' +
-            '</div>';
-        m.bindPopup(popupContent);
-
-        m.on('popupopen', function() {
-            document.getElementById('popup-chat-' + u.user_id)?.onclick = () => startChat(u.user_id, u.username);
-            document.getElementById('popup-profile-' + u.user_id)?.onclick = () => showUserProfile(u.user_id, u.username);
-            document.getElementById('popup-route-' + u.user_id)?.onclick = () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + u.lat + ',' + u.lng, '_blank');
-            document.getElementById('popup-report-' + u.user_id)?.onclick = () => {
-                const reason = prompt("Motif du signalement :");
-                if (reason) reportUser(u.user_id, reason);
-            };
-            document.getElementById('popup-block-' + u.user_id)?.onclick = () => {
-                if (confirm("Bloquer définitivement cet utilisateur ?")) blockUser(u.user_id);
-            };
-        });
-
-        userMarkers.push(m);
-    });
-
-    map.setView([appState.position.lat, appState.position.lng], 14);
-    map.invalidateSize();
+.info-text {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 12px;
+    text-align: center;
 }
 
-async function showUserProfile(userId, username) {
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, bio, avatar_url, availability, last_seen')
-        .eq('id', userId)
-        .single();
-
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:2000;';
-    modal.innerHTML = '<div style="background:#1e293b; padding:24px; border-radius:24px; max-width:320px; text-align:center; color:white;">' +
-        (profile?.avatar_url ? '<img src="' + profile.avatar_url + '" style="width:80px;height:80px;border-radius:50%;margin-bottom:12px;">' : '<div style="font-size:64px;">👤</div>') +
-        '<h3>' + escapeHtml(profile?.username || username) + '</h3>' +
-        '<p>' + escapeHtml(profile?.bio || 'Aucune bio') + '</p>' +
-        '<p>' + getAvailabilityLabel(profile?.availability) + '</p>' +
-        '<p>🕐 ' + formatLastSeen(profile?.last_seen) + '</p>' +
-        '<button id="closeModalBtn" style="background:#3b82f6; margin-top:16px; padding:10px 20px; border:none; border-radius:30px; color:white;">Fermer</button>' +
-        '</div>';
-    document.body.appendChild(modal);
-    document.getElementById('closeModalBtn').onclick = function() { modal.remove(); };
+hr {
+    margin: 16px 0;
+    border-color: #334155;
 }
 
-export async function loadNearbyUsers() {
-    if (!appState.position || !appState.user) return;
-
-    const radius = parseFloat(document.getElementById('radiusKm')?.value || DEFAULT_RADIUS);
-    document.getElementById('radiusValue').innerHTML = radius + ' km';
-
-    const users = await api.getNearbyUsers(
-        appState.position.lat,
-        appState.position.lng,
-        radius,
-        appState.user.id
-    );
-
-    setState('nearbyUsers', users);
-
-    const container = document.getElementById('nearbyList');
-    if (!users || users.length === 0) {
-        container.innerHTML = '<div class="info-card">✨ Personne à proximité</div>';
-        updateMapWithUsers([]);
-        return;
-    }
-
-    let html = '';
-    for (let u of users) {
-        html += '<div class="user-card">' +
-            '<div class="user-card-avatar">' +
-            (u.avatar_url ? '<img src="' + escapeHtml(u.avatar_url) + '">' : '👤') +
-            '</div>' +
-            '<div style="flex:1;">' +
-            '<div class="user-name">' + escapeHtml(u.username) + '</div>' +
-            '<div class="user-distance">📏 ' + formatDistance(u.distance_km) + '</div>' +
-            '<div class="user-distance">🕐 ' + formatLastSeen(u.last_seen) + '</div>' +
-            '<div class="user-distance">' + getAvailabilityLabel(u.availability) + '</div>' +
-            '</div>' +
-            (u.is_unlocked ?
-                '<span class="badge">✅ Débloqué</span>' :
-                '<button class="unlock-btn" data-id="' + u.user_id + '" data-name="' + escapeHtml(u.username) + '">🔓 Débloquer (' + UNLOCK_COST + ' FCFA)</button>'
-            ) +
-            '</div>';
-    }
-    container.innerHTML = html;
-
-    updateMapWithUsers(users.filter(u => u.is_unlocked));
-
-    document.querySelectorAll('.unlock-btn').forEach(btn => {
-        const userId = btn.dataset.id;
-        const userName = btn.dataset.name;
-        btn.onclick = () => unlockUser(userId, userName);
-    });
+h3 {
+    color: white;
+    margin-bottom: 16px;
+    font-size: 16px;
 }
-
-export const debouncedLoadNearby = debounce(loadNearbyUsers, 300);
-
-export function startGeolocation() {
-    if (!navigator.geolocation) {
-        showNotification("GPS non supporté", true);
-        return;
-    }
-    if (appState.watchId) stopGeolocation();
-
-    document.getElementById('gpsStatus').innerHTML = '🟢 Recherche GPS...';
-    document.getElementById('enableGpsBtn').style.display = 'none';
-    document.getElementById('stopGpsBtn').style.display = 'block';
-
-    const watchId = navigator.geolocation.watchPosition(
-        async (pos) => {
-            const position = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            updatePosition(position);
-            await api.updateLocation(appState.user.id, position.lat, position.lng);
-            await supabase.from('profiles').update({ last_seen: new Date() }).eq('id', appState.user.id);
-
-            document.getElementById('gpsStatus').innerHTML = '✅ GPS actif (' + position.lat.toFixed(3) + ', ' + position.lng.toFixed(3) + ')';
-            initMap();
-            loadNearbyUsers();
-        },
-        (err) => {
-            showNotification("Erreur GPS: " + err.message, true);
-            stopGeolocation();
-        },
-        GPS_OPTIONS
-    );
-    setState('watchId', watchId);
-    setState('isGpsActive', true);
-}
-
-export function stopGeolocation() {
-    if (appState.watchId) {
-        navigator.geolocation.clearWatch(appState.watchId);
-        setState('watchId', null);
-    }
-    setState('isGpsActive', false);
-    document.getElementById('gpsStatus').innerHTML = '📍 GPS arrêté';
-    document.getElementById('enableGpsBtn').style.display = 'block';
-    document.getElementById('stopGpsBtn').style.display = 'none';
+#map {
+    height: 350px;
+    width: 100%;
+    background: #e5e7eb;
+    border-radius: 16px;
+    margin-bottom: 16px;
 }
