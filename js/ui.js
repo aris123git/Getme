@@ -1,37 +1,23 @@
-export const appState = {
-    user: null, balance: 0, position: null, nearbyUsers: [],
-    currentChat: null, currentChatChannel: null, watchId: null,
-    map: null, userMarkers: [], isGpsActive: false
-};
+import { escapeHtml } from './utils.js';
 
-const listeners = new Map();
-
-export function subscribe(key, cb) {
-    if (!listeners.has(key)) listeners.set(key, []);
-    listeners.get(key).push(cb);
-    return () => {
-        const callbacks = listeners.get(key);
-        const index = callbacks.indexOf(cb);
-        if (index !== -1) callbacks.splice(index, 1);
-    };
+export function showNotification(message, isError = false) {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    const notif = document.createElement('div');
+    notif.className = `notification ${isError ? 'error' : ''}`;
+    notif.innerHTML = escapeHtml(message);
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
 }
 
-function notify(key, value) {
-    const callbacks = listeners.get(key);
-    if (callbacks) callbacks.forEach(cb => cb(value));
-}
-
-export function setState(key, value) {
-    appState[key] = value;
-    notify(key, value);
-}
-
-export function updateBalance(balance) {
-    appState.balance = balance;
-    notify('balance', balance);
-}
-
-export function updatePosition(position) {
-    appState.position = position;
-    notify('position', position);
+export function setTabActive(tabName) {
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.tab === tabName) tab.classList.add('active');
+    });
+    document.getElementById('mapTab')?.classList.add('hidden');
+    document.getElementById('messagesTab')?.classList.add('hidden');
+    document.getElementById('profileTab')?.classList.add('hidden');
+    const tabId = tabName === 'map' ? 'mapTab' : tabName === 'messages' ? 'messagesTab' : 'profileTab';
+    document.getElementById(tabId)?.classList.remove('hidden');
 }
