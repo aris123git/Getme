@@ -1,1 +1,1 @@
-# Getme
+git rm r*
