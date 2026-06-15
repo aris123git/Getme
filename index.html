@@ -3,499 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="theme-color" content="#0a0f1e">
-    <meta name="description" content="Nearby - Rencontrez des personnes proches de vous">
-    <meta name="mobile-web-app-capable" content="yes">
-
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>Nearby - Rencontres de proximité</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+    <title>Nearby</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
-
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-            --bg: #0a0f1e;
-            --bg2: #111827;
-            --bg3: #1a2236;
-            --card: #141c2e;
-            --border: rgba(255,255,255,0.07);
-            --border2: rgba(255,255,255,0.12);
-            --accent: #6c63ff;
-            --accent2: #8b84ff;
-            --accent-glow: rgba(108,99,255,0.18);
-            --text1: #f0f4ff;
-            --text2: #8a95b0;
-            --text3: #505a72;
-            --success: #22d3a0;
-            --danger: #ff5f6d;
-            --warning: #f59e0b;
-            --radius: 16px;
-            --radius-sm: 10px;
-            --radius-xs: 7px;
-        }
-
-        html, body {
-            background: var(--bg);
-            color: var(--text1);
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 0 0 40px;
-        }
-
-        .hidden { display: none !important; }
-
-        /* ── AUTH SCREEN ── */
-        #authScreen {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(108,99,255,0.22) 0%, transparent 70%);
-        }
-
-        .auth-card {
-            width: 100%;
-            max-width: 400px;
-            background: var(--card);
-            border: 1px solid var(--border2);
-            border-radius: 24px;
-            padding: 40px 36px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .auth-logo {
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .auth-logo .logo-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 20px;
-            background: linear-gradient(135deg, #6c63ff, #a78bfa);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin-bottom: 16px;
-            box-shadow: 0 8px 32px rgba(108,99,255,0.35);
-        }
-
-        .auth-logo h1 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 28px;
-            font-weight: 600;
-            color: var(--text1);
-            letter-spacing: -0.5px;
-        }
-
-        .auth-logo p {
-            font-size: 14px;
-            color: var(--text2);
-            margin-top: 4px;
-        }
-
-        #authMsg {
-            font-size: 13px;
-            text-align: center;
-            min-height: 20px;
-            color: var(--success);
-            background: rgba(34,211,160,0.08);
-            border-radius: var(--radius-xs);
-            padding: 8px 12px;
-            display: none;
-        }
-        #authMsg:not(:empty) { display: block; }
-
-        input[type="email"],
-        input[type="password"],
-        input[type="text"],
-        input[type="tel"],
-        textarea,
-        select {
-            width: 100%;
-            background: var(--bg3);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius-sm);
-            padding: 12px 16px;
-            color: var(--text1);
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        input::placeholder, textarea::placeholder { color: var(--text3); }
-
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow);
-        }
-
-        select { appearance: none; cursor: pointer; }
-
-        textarea { resize: vertical; min-height: 80px; }
-
-        button {
-            width: 100%;
-            padding: 13px 20px;
-            border-radius: var(--radius-sm);
-            border: none;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        button:active { transform: scale(0.98); }
-
-        /* Primary */
-        button:not(.secondary):not(.danger):not(.warning):not(.small) {
-            background: linear-gradient(135deg, #6c63ff, #8b5cf6);
-            color: #fff;
-            box-shadow: 0 4px 16px rgba(108,99,255,0.28);
-        }
-        button:not(.secondary):not(.danger):not(.warning):not(.small):hover {
-            box-shadow: 0 6px 24px rgba(108,99,255,0.42);
-            filter: brightness(1.08);
-        }
-
-        button.secondary {
-            background: var(--bg3);
-            color: var(--text2);
-            border: 1px solid var(--border2);
-        }
-        button.secondary:hover { background: var(--border); color: var(--text1); }
-
-        button.danger {
-            background: rgba(255,95,109,0.12);
-            color: var(--danger);
-            border: 1px solid rgba(255,95,109,0.25);
-        }
-        button.danger:hover { background: rgba(255,95,109,0.2); }
-
-        button.warning {
-            background: rgba(245,158,11,0.12);
-            color: var(--warning);
-            border: 1px solid rgba(245,158,11,0.25);
-        }
-
-        button.small {
-            width: auto;
-            padding: 7px 14px;
-            font-size: 12px;
-            border-radius: var(--radius-xs);
-        }
-
-        /* ── MAIN SCREEN ── */
-        #mainScreen { padding-top: 0; }
-
-        /* Header */
-        .header-card {
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(12px);
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), #a78bfa);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            border: 2px solid var(--border2);
-            overflow: hidden;
-            transition: box-shadow 0.2s;
-        }
-        .avatar:hover { box-shadow: 0 0 0 3px var(--accent-glow); }
-
-        #userName {
-            font-weight: 500;
-            font-size: 14px;
-            color: var(--text1);
-            display: block;
-        }
-
-        #userBalance {
-            font-size: 12px;
-            color: var(--success);
-            font-weight: 500;
-        }
-
-        /* Tabs */
-        .tabs-card {
-            background: transparent;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 4px;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
-            background: var(--card);
-        }
-
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 8px 4px;
-            border-radius: var(--radius-xs);
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text3);
-            cursor: pointer;
-            transition: all 0.18s;
-        }
-
-        .tab:hover { color: var(--text2); background: var(--bg3); }
-
-        .tab.active {
-            background: var(--accent-glow);
-            color: var(--accent2);
-            border: 1px solid rgba(108,99,255,0.2);
-        }
-
-        /* Tab content */
-        #mapTab, #messagesTab, #profileTab, #adminTab {
-            padding: 20px 16px;
-        }
-
-        /* Info card */
-        .info-card {
-            background: var(--bg3);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius-sm);
-            padding: 12px 16px;
-            font-size: 13px;
-            color: var(--text2);
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Button group */
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .button-group button { flex: 1; }
-
-        /* Radius slider */
-        .radius-slider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 12px 16px;
-        }
-
-        .radius-slider span { font-size: 13px; color: var(--text2); white-space: nowrap; }
-
-        input[type="range"] {
-            flex: 1;
-            appearance: none;
-            height: 4px;
-            background: var(--border2);
-            border-radius: 99px;
-            outline: none;
-            padding: 0;
-            border: none;
-            box-shadow: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-            box-shadow: 0 0 0 4px var(--accent-glow);
-        }
-
-        #radiusValue {
-            min-width: 40px;
-            text-align: right;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--accent2);
-        }
-
-        /* Map */
-        #map {
-            width: 100%;
-            height: 320px;
-            border-radius: var(--radius);
-            overflow: hidden;
-            border: 1px solid var(--border2);
-            margin-bottom: 16px;
-        }
-
-        #centerMapBtn {
-            margin-bottom: 14px;
-        }
-
-        /* Nearby list */
-        #nearbyList {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        /* Messages */
-        #conversationsList {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .loading {
-            color: var(--text3);
-            font-size: 13px;
-            text-align: center;
-            padding: 32px 0;
-        }
-
-        /* Chat */
-        #chatWith {
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--text1);
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 12px;
-        }
-
-        .chat-container {
-            height: 280px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding-right: 4px;
-            margin-bottom: 12px;
-        }
-
-        .chat-input {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .chat-input input { flex: 1; }
-        .chat-input button { width: auto; padding: 12px 16px; }
-
-        /* Profile */
-        #profileTab {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        #profileTab h3 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text2);
-            margin-top: 8px;
-        }
-
-        #profileTab hr {
-            border: none;
-            border-top: 1px solid var(--border);
-            margin: 4px 0;
-        }
-
-        #balanceDisplay {
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        /* Admin */
-        #adminTab h3 {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text2);
-            margin-bottom: 12px;
-        }
-
-        #adminTab hr {
-            border: none;
-            border-top: 1px solid var(--border);
-            margin: 20px 0;
-        }
-
-        #reportsList, #bannedList {
-            margin-bottom: 14px;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
-    </style>
 </head>
 <body>
 <div class="container">
     <!-- Écran de connexion -->
     <div id="authScreen">
-        <div class="auth-card">
-            <div class="auth-logo">
-                <div class="logo-icon">📍</div>
-                <h1>Nearby</h1>
-                <p>Rencontrez des personnes proches de vous</p>
-            </div>
+        <div class="card auth-card">
+            <h1>📍 Nearby</h1>
+            <p>Rencontrez des personnes proches de vous</p>
             <div id="authMsg"></div>
-            <input type="email" id="email" placeholder="Adresse email">
+            <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Mot de passe">
             <button id="signupBtn">📝 Créer un compte</button>
             <button id="loginBtn" class="secondary">🔑 Se connecter</button>
@@ -504,7 +24,7 @@
 
     <!-- Écran principal -->
     <div id="mainScreen" class="hidden">
-        <div class="header-card">
+        <div class="card header-card">
             <div class="header-content">
                 <div class="profile-header">
                     <div class="avatar" id="profileAvatar">👤</div>
@@ -518,69 +38,55 @@
             </div>
         </div>
 
-        <div class="tabs-card">
+        <div class="card tabs-card">
             <div class="tabs">
                 <div class="tab active" data-tab="map">🗺️ Carte</div>
                 <div class="tab" data-tab="messages">💬 Messages</div>
                 <div class="tab" data-tab="profile">👤 Profil</div>
-                <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">🛡️ Admin</div>
             </div>
 
-            <!-- Tab Carte -->
             <div id="mapTab">
-                <div id="gpsStatus" class="info-card">📍 Activez votre position pour commencer</div>
+                <div id="gpsStatus" class="info-card">📍 Activez votre position</div>
                 <div class="button-group">
                     <button id="enableGpsBtn">📍 Activer GPS</button>
                     <button id="stopGpsBtn" class="secondary hidden">🛑 Arrêter</button>
                 </div>
                 <div class="radius-slider">
-                    <span>📏 Rayon :</span>
+                    <span>📏 Rayon:</span>
                     <input type="range" id="radiusKm" min="1" max="20" value="5">
                     <span id="radiusValue">5 km</span>
                 </div>
-                <button id="centerMapBtn" class="secondary">🎯 Centrer sur moi</button>
+                <button id="centerMapBtn" class="secondary" style="margin-bottom:16px;">🎯 Centrer sur moi</button>
                 <div id="map"></div>
                 <div id="nearbyList"></div>
             </div>
 
-            <!-- Tab Messages -->
             <div id="messagesTab" class="hidden">
                 <div id="conversationsList" class="loading">Chargement...</div>
                 <div id="chatView" class="hidden">
                     <div id="chatWith"></div>
                     <div id="chatMessages" class="chat-container"></div>
                     <div class="chat-input">
-                        <input type="text" id="messageInput" placeholder="Écrivez un message...">
+                        <input type="text" id="messageInput" placeholder="Message...">
                         <button id="sendMsgBtn">📤</button>
                     </div>
                     <button id="closeChatBtn" class="secondary">Fermer</button>
                 </div>
             </div>
 
-            <!-- Tab Profil -->
             <div id="profileTab" class="hidden">
                 <input type="text" id="profileName" placeholder="Nom d'utilisateur">
                 <textarea id="profileBio" placeholder="Bio" rows="3"></textarea>
-                <input type="tel" id="profilePhone" placeholder="Téléphone Orange Money">
+                <input type="tel" id="profilePhone" placeholder="Téléphone">
                 <select id="profileAvailability">
-                    <option value="now">🟢 Disponible maintenant</option>
-                    <option value="today">📅 Disponible aujourd'hui</option>
-                    <option value="week">📆 Disponible cette semaine</option>
+                    <option value="now">Disponible maintenant</option>
+                    <option value="today">Disponible aujourd'hui</option>
+                    <option value="week">Disponible cette semaine</option>
                 </select>
                 <button id="saveProfileBtn">💾 Enregistrer</button>
                 <hr>
-                <h3>💰 Solde : <span id="balanceDisplay">0</span> FCFA</h3>
+                <h3>💰 Solde: <span id="balanceDisplay">0</span> FCFA</h3>
                 <button id="rechargeBtn" class="warning hidden">📱 Recharger</button>
-            </div>
-
-            <!-- Tab Admin -->
-            <div id="adminTab" class="hidden">
-                <h3>Signalements en attente</h3>
-                <div id="reportsList" class="loading">Chargement...</div>
-                <button id="refreshReportsBtn" class="secondary">⟳ Actualiser</button>
-                <hr>
-                <h3>Utilisateurs bannis</h3>
-                <div id="bannedList" class="loading">Chargement...</div>
             </div>
         </div>
     </div>
