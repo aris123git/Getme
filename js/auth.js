@@ -38,9 +38,10 @@ export async function handleAuthChange() {
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('mainScreen').classList.remove('hidden');
         document.getElementById('userName').innerText = session.user.email.split('@')[0];
+        return session.user;
     } else {
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('mainScreen').classList.add('hidden');
+        return null;
     }
-    return session?.user;
 }
