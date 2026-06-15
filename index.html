@@ -3,96 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Nearby</title>
+    <title>Nearby - Carte GPS</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #334155;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 8px;
+        }
+        p {
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button.secondary {
+            background: #475569;
+        }
+        .status {
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 16px;
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+        .hidden {
+            display: none;
+        }
+        #map {
+            height: 350px;
+            width: 100%;
+            border-radius: 20px;
+            margin-top: 16px;
+            background: #1e293b;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-    <!-- Écran de connexion -->
-    <div id="authScreen">
-        <div class="card auth-card">
-            <h1>📍 Nearby</h1>
-            <p>Rencontrez des personnes proches de vous</p>
-            <div id="authMsg"></div>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Mot de passe">
-            <button id="signupBtn">📝 Créer un compte</button>
-            <button id="loginBtn" class="secondary">🔑 Se connecter</button>
-        </div>
+    <div class="card">
+        <h1>📍 Nearby - Test Carte</h1>
+        <p>Activez le GPS pour voir votre position sur la carte</p>
     </div>
 
-    <!-- Écran principal -->
-    <div id="mainScreen" class="hidden">
-        <div class="card header-card">
-            <div class="header-content">
-                <div class="profile-header">
-                    <div class="avatar" id="profileAvatar">👤</div>
-                    <input type="file" id="avatarInput" accept="image/*" style="display:none;">
-                    <div>
-                        <span id="userName"></span>
-                        <div id="userBalance">💰 0 FCFA</div>
-                    </div>
-                </div>
-                <button id="logoutBtn" class="danger small">Déconnexion</button>
-            </div>
-        </div>
-
-        <div class="card tabs-card">
-            <div class="tabs">
-                <div class="tab active" data-tab="map">🗺️ Carte</div>
-                <div class="tab" data-tab="messages">💬 Messages</div>
-                <div class="tab" data-tab="profile">👤 Profil</div>
-            </div>
-
-            <div id="mapTab">
-                <div id="gpsStatus" class="info-card">📍 Activez votre position</div>
-                <div class="button-group">
-                    <button id="enableGpsBtn">📍 Activer GPS</button>
-                    <button id="stopGpsBtn" class="secondary hidden">🛑 Arrêter</button>
-                </div>
-                <div class="radius-slider">
-                    <span>📏 Rayon:</span>
-                    <input type="range" id="radiusKm" min="1" max="20" value="5">
-                    <span id="radiusValue">5 km</span>
-                </div>
-                <button id="centerMapBtn" class="secondary" style="margin-bottom:16px;">🎯 Centrer sur moi</button>
-                <div id="map"></div>
-                <div id="nearbyList"></div>
-            </div>
-
-            <div id="messagesTab" class="hidden">
-                <div id="conversationsList" class="loading">Chargement...</div>
-                <div id="chatView" class="hidden">
-                    <div id="chatWith"></div>
-                    <div id="chatMessages" class="chat-container"></div>
-                    <div class="chat-input">
-                        <input type="text" id="messageInput" placeholder="Message...">
-                        <button id="sendMsgBtn">📤</button>
-                    </div>
-                    <button id="closeChatBtn" class="secondary">Fermer</button>
-                </div>
-            </div>
-
-            <div id="profileTab" class="hidden">
-                <input type="text" id="profileName" placeholder="Nom d'utilisateur">
-                <textarea id="profileBio" placeholder="Bio" rows="3"></textarea>
-                <input type="tel" id="profilePhone" placeholder="Téléphone">
-                <select id="profileAvailability">
-                    <option value="now">Disponible maintenant</option>
-                    <option value="today">Disponible aujourd'hui</option>
-                    <option value="week">Disponible cette semaine</option>
-                </select>
-                <button id="saveProfileBtn">💾 Enregistrer</button>
-                <hr>
-                <h3>💰 Solde: <span id="balanceDisplay">0</span> FCFA</h3>
-                <button id="rechargeBtn" class="warning hidden">📱 Recharger</button>
-            </div>
-        </div>
+    <div class="card">
+        <div id="gpsStatus" class="status">📍 Cliquez sur "Activer GPS"</div>
+        <button id="enableGpsBtn">📍 Activer GPS</button>
+        <button id="stopGpsBtn" class="secondary hidden">🛑 Arrêter</button>
+        <button id="centerMapBtn" class="secondary" style="margin-top:8px;">🎯 Centrer sur moi</button>
+        <div id="map"></div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module" src="js/main.js"></script>
+<script>
+    // ========== VARIABLES ==========
+    let map = null;
+    let userMarker = null;
+    let watchId = null;
+    let currentPosition = null;
+
+    // ========== FONCTIONS ==========
+    function initMap(lat, lng) {
+        if (map) return;
+        map = L.map('map').setView([lat, lng], 14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+        console.log("Carte créée");
+    }
+
+    function updateUserMarker(lat, lng) {
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px #3b82f6;"></div>',
+                iconSize: [20, 20]
+            })
+        }).addTo(map).bindPopup('<b>Vous</b>').openPopup();
+        map.setView([lat, lng], 15);
+        console.log("Position mise à jour:", lat, lng);
+    }
+
+    function startGeolocation() {
+        if (!navigator.geolocation) {
+            document.getElementById('gpsStatus').innerHTML = "❌ GPS non supporté";
+            return;
+        }
+        if (watchId) stopGeolocation();
+
+        document.getElementById('gpsStatus').innerHTML = "🟢 Recherche GPS...";
+        document.getElementById('enableGpsBtn').style.display = 'none';
+        document.getElementById('stopGpsBtn').style.display = 'block';
+
+        watchId = navigator.geolocation.watchPosition(
+            function(position) {
+                currentPosition = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                document.getElementById('gpsStatus').innerHTML = "✅ GPS actif : " + currentPosition.lat.toFixed(4) + ", " + currentPosition.lng.toFixed(4);
+
+                if (!map) initMap(currentPosition.lat, currentPosition.lng);
+                updateUserMarker(currentPosition.lat, currentPosition.lng);
+            },
+            function(error) {
+                document.getElementById('gpsStatus').innerHTML = "❌ Erreur GPS: " + error.message;
+                stopGeolocation();
+            },
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
+        );
+    }
+
+    function stopGeolocation() {
+        if (watchId) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+        document.getElementById('gpsStatus').innerHTML = "📍 GPS arrêté";
+        document.getElementById('enableGpsBtn').style.display = 'block';
+        document.getElementById('stopGpsBtn').style.display = 'none';
+    }
+
+    function centerMap() {
+        if (currentPosition && map) {
+            map.setView([currentPosition.lat, currentPosition.lng], 15);
+            document.getElementById('gpsStatus').innerHTML = "📍 Centré sur votre position";
+        } else {
+            document.getElementById('gpsStatus').innerHTML = "❌ Position non disponible";
+        }
+    }
+
+    // ========== ÉVÉNEMENTS ==========
+    document.getElementById('enableGpsBtn').onclick = startGeolocation;
+    document.getElementById('stopGpsBtn').onclick = stopGeolocation;
+    document.getElementById('centerMapBtn').onclick = centerMap;
+
+    console.log("Application prête, boutons attachés");
+</script>
 </body>
 </html>
