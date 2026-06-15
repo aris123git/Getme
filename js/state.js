@@ -1,24 +1,17 @@
 export const appState = {
-    user: null,
-    balance: 0,
-    position: null,
-    nearbyUsers: [],
-    currentChat: null,
-    currentChatChannel: null,
-    watchId: null,
-    map: null,
-    userMarkers: [],
-    isGpsActive: false
+    user: null, balance: 0, position: null, nearbyUsers: [],
+    currentChat: null, currentChatChannel: null, watchId: null,
+    map: null, userMarkers: [], isGpsActive: false
 };
 
 const listeners = new Map();
 
-export function subscribe(key, callback) {
+export function subscribe(key, cb) {
     if (!listeners.has(key)) listeners.set(key, []);
-    listeners.get(key).push(callback);
+    listeners.get(key).push(cb);
     return () => {
         const callbacks = listeners.get(key);
-        const index = callbacks.indexOf(callback);
+        const index = callbacks.indexOf(cb);
         if (index !== -1) callbacks.splice(index, 1);
     };
 }
