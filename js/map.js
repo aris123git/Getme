@@ -77,7 +77,7 @@ function updateMapWithUsers(users) {
     }
 
     users.forEach(u => {
-        if (!u.is_unlocked) return;
+        if (u.lat == null || u.lng == null) return; // ✅ Sécurité anti-crash Leaflet
 
         const m = L.marker([u.lat, u.lng], {
             icon: L.divIcon({
@@ -93,7 +93,7 @@ function updateMapWithUsers(users) {
             getAvailabilityLabel(u.availability) + '<br>' +
             '<hr style="margin:8px 0;">' +
             '<button id="popup-chat-' + u.user_id + '" class="popup-btn" style="background:#3b82f6; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Message</button>' +
-            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">👤 Profil</button>' +
+            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Discuter</button>' +
             '<button id="popup-route-' + u.user_id + '" class="popup-btn" style="background:#22c55e; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">📍 Itinéraire</button>' +
             '<button id="popup-report-' + u.user_id + '" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚨 Signaler</button>' +
             '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚫 Bloquer</button>' +
@@ -105,7 +105,7 @@ function updateMapWithUsers(users) {
             if (chatBtn) chatBtn.onclick = () => startChat(u.user_id, u.username);
 
             const profileBtn = document.getElementById('popup-profile-' + u.user_id);
-            if (profileBtn) profileBtn.onclick = () => showUserProfile(u.user_id, u.username);
+            if (profileBtn) profileBtn.onclick = () => startChat(u.user_id, u.username);
 
             const routeBtn = document.getElementById('popup-route-' + u.user_id);
             if (routeBtn) routeBtn.onclick = () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + u.lat + ',' + u.lng, '_blank');
@@ -174,7 +174,7 @@ export async function loadNearbyUsers() {
 
     let html = '';
     for (let u of users) {
-        html += '<div class="user-card">' +
+        html += '<div class="user-card" data-id="' + u.user_id + '" data-name="' + escapeHtml(u.username) + '" style="cursor:pointer;">' +
             '<div class="user-card-avatar">' +
             (u.avatar_url ? '<img src="' + escapeHtml(u.avatar_url) + '">' : '👤') +
             '</div>' +
@@ -184,20 +184,23 @@ export async function loadNearbyUsers() {
             '<div class="user-distance">🕐 ' + formatLastSeen(u.last_seen) + '</div>' +
             '<div class="user-distance">' + getAvailabilityLabel(u.availability) + '</div>' +
             '</div>' +
-            (u.is_unlocked ?
-                '<span class="badge">✅ Débloqué</span>' :
-                '<button class="unlock-btn" data-id="' + u.user_id + '" data-name="' + escapeHtml(u.username) + '">🔓 Débloquer (' + UNLOCK_COST + ' FCFA)</button>'
-            ) +
+            '<button class="chat-btn" data-id="' + u.user_id + '" data-name="' + escapeHtml(u.username) + '">💬 Discuter</button>' +
             '</div>';
     }
     container.innerHTML = html;
 
-    updateMapWithUsers(users.filter(u => u.is_unlocked));
+    updateMapWithUsers(users);
 
-    document.querySelectorAll('.unlock-btn').forEach(btn => {
-        const userId = btn.dataset.id;
-        const userName = btn.dataset.name;
-        btn.onclick = () => unlockUser(userId, userName);
+    document.querySelectorAll('.chat-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            startChat(btn.dataset.id, btn.dataset.name);
+        };
+    });
+
+    // ✅ Cliquer n'importe où sur la carte utilisateur ouvre aussi le chat directement
+    document.querySelectorAll('.user-card').forEach(card => {
+        card.onclick = () => startChat(card.dataset.id, card.dataset.name);
     });
 }
 
