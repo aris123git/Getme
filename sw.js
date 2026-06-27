@@ -25,8 +25,8 @@ const urlsToCache = [
     '/manifest.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 ];
 
