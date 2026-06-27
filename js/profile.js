@@ -88,3 +88,22 @@ export async function unlockUser(targetId, targetName) {
     showNotification(`✅ ${targetName} débloqué gratuitement (mode test)`);
     loadNearbyUsers();
 }
+
+export async function blockUser(targetId) {
+    const { error } = await supabase.rpc('block_user', {
+        blocker: appState.user.id,
+        blocked: targetId
+    });
+    if (error) {
+        showNotification("Erreur lors du blocage", true);
+        return;
+    }
+    showNotification("🚫 Utilisateur bloqué");
+    loadNearbyUsers();
+}
+
+export async function reportUser(targetId, reason) {
+    // ⚠️ Fonctionnalité en attente : la table "reports" n'existe pas encore côté Supabase.
+    showNotification("Signalement reçu localement — fonctionnalité complète à venir", false);
+    console.log('Signalement (non sauvegardé) :', { targetId, reason });
+}
