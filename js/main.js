@@ -131,14 +131,19 @@ function initEventListeners() {
     initThemeToggle();
 }
 
-async function init() {
-    initEventListeners();
-    supabase.auth.onAuthStateChange(() => handleAuthChange());
+async function syncUserState() {
     const user = await handleAuthChange();
+    appState.user = user; // ✅ Mis à jour à CHAQUE changement (login, logout, refresh de session)
     if (user) {
-        appState.user = user;
         await refreshBalance();
     }
+    return user;
+}
+
+async function init() {
+    initEventListeners();
+    supabase.auth.onAuthStateChange(() => syncUserState());
+    await syncUserState();
 }
 
 init();
