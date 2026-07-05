@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <link rel="stylesheet" href="CSS/style.css">
 </head>
 <body>
 <div class="container">
@@ -49,7 +49,6 @@
           </div>
         </div>
         <div style="display:flex; gap:8px;">
-          <!-- 🔄 CACHE CLEAR BUTTON (solution cache) -->
           <button id="clearCacheBtn" class="small secondary" title="Vider le cache">🔄</button>
           <button id="themeToggleBtn" class="small" title="Changer de thème">🌙</button>
           <button id="logoutBtn" class="danger small">Déconnexion</button>
@@ -127,8 +126,7 @@
   </div><!-- /mainScreen -->
 </div><!-- /container -->
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- 🔥 VERSIONNEMENT DU SCRIPT (solution cache) — Incrémente ce numéro à chaque déploiement -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script type="module" src="js/main.js?v=2.0.0"></script>
 </body>
 </html>
