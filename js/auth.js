@@ -37,16 +37,19 @@ export async function logout() {
 
 export async function handleAuthChange() {
     const { data: { session }, error } = await supabase.auth.getSession();
+    console.log('🔍 handleAuthChange appelée, session:', session?.user?.email || 'null', 'error:', error);
     if (error) {
         console.error("Erreur session:", error);
         return null;
     }
     if (session?.user) {
+        console.log('✅ Session trouvée, affichage mainScreen');
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('mainScreen').classList.remove('hidden');
         document.getElementById('userName').innerText = session.user.email.split('@')[0];
         return session.user;
     } else {
+        console.log('❌ Pas de session, affichage authScreen');
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('mainScreen').classList.add('hidden');
         return null;
