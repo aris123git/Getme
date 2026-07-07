@@ -1,26 +1,27 @@
-const CACHE_VERSION = 'v2.1.0';
+const CACHE_VERSION = 'v3.0.0';
 const CACHE_NAME = `getme-${CACHE_VERSION}`;
 
 const urlsToCache = [
     '/',
     '/index.html',
-    '/CSS/style.css',
-    '/js/main.js',
-    '/js/config.js',
-    '/js/state.js',
-    '/js/utils.js',
-    '/js/api.js',
-    '/js/auth.js',
-    '/js/map.js',
-    '/js/chat.js',
-    '/js/profile.js',
-    '/js/ui.js',
-    '/js/supabaseClient.js',
+    '/CSS/style.css?v=3.0.0',
+    '/js/main.js?v=3.0.0',
+    '/js/config.js?v=3.0.0',
+    '/js/state.js?v=3.0.0',
+    '/js/utils.js?v=3.0.0',
+    '/js/api.js?v=3.0.0',
+    '/js/auth.js?v=3.0.0',
+    '/js/map.js?v=3.0.0',
+    '/js/chat.js?v=3.0.0',
+    '/js/profile.js?v=3.0.0',
+    '/js/ui.js?v=3.0.0',
+    '/js/supabaseClient.js?v=3.0.0',
     '/manifest.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png'
 ];
 
+// ── INSTALL ──
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -29,51 +30,88 @@ self.addEventListener('install', event => {
     );
 });
 
+// ── ACTIVATE ──
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
-        ).then(() => self.clients.claim())
+        caches.keys()
+            .then(keys => Promise.all(
+                keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+            ))
+            .then(() => self.clients.claim())
     );
 });
 
+// ── FETCH ──
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // ✅ Ne jamais intercepter les requêtes externes (Supabase, CDN, APIs)
+    // ✅ Jamais intercepter les POST (Supabase, auth, chat...)
+    if (event.request.method !== 'GET') return;
+
+    // ✅ Jamais intercepter Supabase
+    if (url.hostname.includes('supabase.co') ||
+        url.hostname.includes('supabase.in')) return;
+
+    // ✅ Jamais intercepter les requêtes externes
     if (url.origin !== self.location.origin) return;
 
-    // Fichiers JS et HTML : réseau d'abord, cache en fallback
-    if (url.pathname.startsWith('/js/') ||
-        url.pathname === '/index.html' ||
-        url.pathname === '/') {
+    // HTML → Network First + fallback offline
+    if (url.pathname === '/' || url.pathname === '/index.html') {
         event.respondWith(
-            fetch(event.request)
+            fetch(event.request, { cache: 'no-cache' })
                 .then(response => {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    if (response && response.status === 200) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    }
                     return response;
                 })
-                .catch(() => caches.match(event.request))
+                .catch(() => caches.match('/index.html'))
         );
         return;
     }
 
-    // Autres fichiers locaux : cache d'abord
+    // JS + CSS → Stale While Revalidate
+    if (url.pathname.startsWith('/js/') || url.pathname.startsWith('/CSS/')) {
+        event.respondWith(
+            caches.match(event.request).then(cached => {
+                const networkFetch = fetch(event.request, { cache: 'no-cache' })
+                    .then(response => {
+                        if (response && response.status === 200) {
+                            const clone = response.clone();
+                            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                        }
+                        return response;
+                    })
+                    .catch(() => cached);
+                return cached || networkFetch;
+            })
+        );
+        return;
+    }
+
+    // Images + icônes + manifest → Cache First
     event.respondWith(
         caches.match(event.request).then(response => {
             if (response) return response;
             return fetch(event.request).then(response => {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                if (response && response.status === 200) {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                }
                 return response;
-            });
+            }).catch(() => caches.match('/index.html'));
         })
     );
 });
 
+// ── MESSAGE HANDLER ──
 self.addEventListener('message', event => {
     if (event.data === 'clearCache') {
-        caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
+        event.waitUntil(
+            caches.keys().then(keys =>
+                Promise.all(keys.map(key => caches.delete(key)))
+            )
+        );
     }
 });
