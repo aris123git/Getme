@@ -141,13 +141,13 @@ async function syncUserState() {
 }
 
 async function init() {
+    // ✅ Recharge la page quand un nouveau SW prend le contrôle
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
+    }
     initEventListeners();
     supabase.auth.onAuthStateChange(() => syncUserState());
     await syncUserState();
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
 }
