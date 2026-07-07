@@ -1,21 +1,21 @@
-const CACHE_VERSION = 'v3.0.0';
+const CACHE_VERSION = 'v3.1.0';
 const CACHE_NAME = `getme-${CACHE_VERSION}`;
 
 const urlsToCache = [
     '/',
     '/index.html',
-    '/CSS/style.css?v=3.0.0',
-    '/js/main.js?v=3.0.0',
-    '/js/config.js?v=3.0.0',
-    '/js/state.js?v=3.0.0',
-    '/js/utils.js?v=3.0.0',
-    '/js/api.js?v=3.0.0',
-    '/js/auth.js?v=3.0.0',
-    '/js/map.js?v=3.0.0',
-    '/js/chat.js?v=3.0.0',
-    '/js/profile.js?v=3.0.0',
-    '/js/ui.js?v=3.0.0',
-    '/js/supabaseClient.js?v=3.0.0',
+    '/CSS/style.css',
+    '/js/main.js',
+    '/js/config.js',
+    '/js/state.js',
+    '/js/utils.js',
+    '/js/api.js',
+    '/js/auth.js',
+    '/js/map.js',
+    '/js/chat.js',
+    '/js/profile.js',
+    '/js/ui.js',
+    '/js/supabaseClient.js',
     '/manifest.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png'
@@ -45,12 +45,19 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // ✅ Jamais intercepter les POST (Supabase, auth, chat...)
+    // ✅ Jamais intercepter les POST
     if (event.request.method !== 'GET') return;
+
+    // ✅ Ignorer les requêtes "only-if-cached" cross-origin
+    if (event.request.cache === 'only-if-cached' &&
+        event.request.mode !== 'same-origin') return;
 
     // ✅ Jamais intercepter Supabase
     if (url.hostname.includes('supabase.co') ||
         url.hostname.includes('supabase.in')) return;
+
+    // ✅ Jamais intercepter les requêtes avec Authorization (données authentifiées)
+    if (event.request.headers.get('Authorization')) return;
 
     // ✅ Jamais intercepter les requêtes externes
     if (url.origin !== self.location.origin) return;
@@ -60,9 +67,8 @@ self.addEventListener('fetch', event => {
         event.respondWith(
             fetch(event.request, { cache: 'no-cache' })
                 .then(response => {
-                    if (response && response.status === 200) {
-                        const clone = response.clone();
-                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    if (response && response.ok && response.status === 200 && response.type === 'basic') {
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
                     }
                     return response;
                 })
@@ -71,19 +77,19 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // JS + CSS → Stale While Revalidate
+    // JS + CSS → Stale While Revalidate (cache immédiat + mise à jour en arrière-plan)
     if (url.pathname.startsWith('/js/') || url.pathname.startsWith('/CSS/')) {
         event.respondWith(
             caches.match(event.request).then(cached => {
                 const networkFetch = fetch(event.request, { cache: 'no-cache' })
                     .then(response => {
-                        if (response && response.status === 200) {
-                            const clone = response.clone();
-                            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                        if (response && response.ok && response.status === 200 && response.type === 'basic') {
+                            caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
                         }
                         return response;
                     })
                     .catch(() => cached);
+                // Retourne le cache immédiatement ET met à jour en arrière-plan
                 return cached || networkFetch;
             })
         );
@@ -94,13 +100,14 @@ self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request).then(response => {
             if (response) return response;
-            return fetch(event.request).then(response => {
-                if (response && response.status === 200) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                }
-                return response;
-            }).catch(() => caches.match('/index.html'));
+            return fetch(event.request)
+                .then(response => {
+                    if (response && response.ok && response.status === 200 && response.type === 'basic') {
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+                    }
+                    return response;
+                })
+                .catch(() => caches.match('/index.html'));
         })
     );
 });
