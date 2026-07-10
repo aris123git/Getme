@@ -151,3 +151,4 @@ async function init() {
     supabase.auth.onAuthStateChange(() => syncUserState());
     await syncUserState();
 }
+init();
