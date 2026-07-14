@@ -1,12 +1,11 @@
 import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
 import { api } from './api.js';
-import { UNLOCK_COST, GPS_OPTIONS, DEFAULT_RADIUS } from './config.js';
+import { GPS_OPTIONS, DEFAULT_RADIUS } from './config.js';
 import { formatDistance, debounce, escapeHtml } from './utils.js';
-import { showNotification } from './ui.js';
-import { unlockUser, reportUser, blockUser } from './profile.js';
+import { showNotification, showConfirmModal } from './ui.js';
+import { reportUser, blockUser } from './profile.js';
 import { startChat } from './chat.js';
-
 let map = null;
 let userMarkers = [];
 
@@ -77,26 +76,29 @@ function updateMapWithUsers(users) {
     }
 
     users.forEach(u => {
-        if (u.lat == null || u.lng == null) return; // ✅ Sécurité anti-crash Leaflet
+        if (u.lat == null || u.lng == null) return;
+
+        const safeName = escapeHtml(u.username || '?');
+        const initial = escapeHtml((u.username || '?').charAt(0).toUpperCase());
 
         const m = L.marker([u.lat, u.lng], {
             icon: L.divIcon({
-                html: '<div style="background:#22c55e;width:20px;height:20px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;">' + u.username.charAt(0).toUpperCase() + '</div>',
+                html: '<div style="background:#22c55e;width:20px;height:20px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;">' + initial + '</div>',
                 iconSize: [20, 20]
             })
         }).addTo(map);
 
         const popupContent = '<div style="min-width:220px; text-align:center;">' +
-            '<strong style="font-size:16px;">' + escapeHtml(u.username) + '</strong><br>' +
+            '<strong style="font-size:16px;">' + safeName + '</strong><br>' +
             '📏 ' + formatDistance(u.distance_km) + '<br>' +
             '🕐 ' + formatLastSeen(u.last_seen) + '<br>' +
             getAvailabilityLabel(u.availability) + '<br>' +
             '<hr style="margin:8px 0;">' +
             '<button id="popup-chat-' + u.user_id + '" class="popup-btn" style="background:#3b82f6; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Message</button>' +
-            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Discuter</button>' +
+            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">👤 Profil</button>' +
             '<button id="popup-route-' + u.user_id + '" class="popup-btn" style="background:#22c55e; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">📍 Itinéraire</button>' +
             '<button id="popup-report-' + u.user_id + '" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚨 Signaler</button>' +
-            '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚫 Bloquer</button>' +
+            '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:#7f1d1d; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚫 Bloquer</button>' +
             '</div>';
         m.bindPopup(popupContent);
 
@@ -105,89 +107,125 @@ function updateMapWithUsers(users) {
             if (chatBtn) chatBtn.onclick = () => startChat(u.user_id, u.username);
 
             const profileBtn = document.getElementById('popup-profile-' + u.user_id);
-            if (profileBtn) profileBtn.onclick = () => startChat(u.user_id, u.username);
+            if (profileBtn) profileBtn.onclick = () => showUserProfile(u.user_id, u.username);
 
             const routeBtn = document.getElementById('popup-route-' + u.user_id);
             if (routeBtn) routeBtn.onclick = () => window.open('https://www.google.com/maps/dir/?api=1&destination=' + u.lat + ',' + u.lng, '_blank');
 
             const reportBtn = document.getElementById('popup-report-' + u.user_id);
-            if (reportBtn) reportBtn.onclick = () => {
-                const reason = prompt("Motif du signalement :");
-                if (reason) reportUser(u.user_id, reason);
+            if (reportBtn) reportBtn.onclick = async () => {
+                const reason = window.prompt('Motif du signalement :');
+                if (reason?.trim()) await reportUser(u.user_id, reason.trim());
             };
 
             const blockBtn = document.getElementById('popup-block-' + u.user_id);
-            if (blockBtn) blockBtn.onclick = () => {
-                if (confirm("Bloquer définitivement cet utilisateur ?")) blockUser(u.user_id);
+            if (blockBtn) blockBtn.onclick = async () => {
+                const ok = await showConfirmModal('Bloquer définitivement cet utilisateur ?');
+                if (ok) await blockUser(u.user_id);
             };
         });
 
         userMarkers.push(m);
     });
 
-    map.setView([appState.position.lat, appState.position.lng], 14);
+    if (appState.position) {
+        map.setView([appState.position.lat, appState.position.lng], 14);
+    }
     map.invalidateSize();
 }
 
 async function showUserProfile(userId, username) {
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, bio, avatar_url, availability, last_seen')
-        .eq('id', userId)
-        .single();
+    let profile = null;
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('username, bio, avatar_url, availability, last_seen')
+            .eq('id', userId)
+            .single();
+        if (error) throw error;
+        profile = data;
+    } catch (err) {
+        console.error('showUserProfile:', err);
+        showNotification('Impossible de charger le profil', true);
+        return;
+    }
+
+    const existing = document.querySelector('.profile-modal-overlay');
+    if (existing) existing.remove();
 
     const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:2000;';
-    modal.innerHTML = '<div style="background:#1e293b; padding:24px; border-radius:24px; max-width:320px; text-align:center; color:white;">' +
-        (profile?.avatar_url ? '<img src="' + profile.avatar_url + '" style="width:80px;height:80px;border-radius:50%;margin-bottom:12px;">' : '<div style="font-size:64px;">👤</div>') +
-        '<h3>' + escapeHtml(profile?.username || username) + '</h3>' +
-        '<p>' + escapeHtml(profile?.bio || 'Aucune bio') + '</p>' +
-        '<p>' + getAvailabilityLabel(profile?.availability) + '</p>' +
-        '<p>🕐 ' + formatLastSeen(profile?.last_seen) + '</p>' +
-        '<button id="closeModalBtn" style="background:#3b82f6; margin-top:16px; padding:10px 20px; border:none; border-radius:30px; color:white;">Fermer</button>' +
-        '</div>';
+    modal.className = 'profile-modal-overlay confirm-overlay';
+    modal.innerHTML = '<div class="confirm-box" style="max-width:320px;">' +
+        (profile?.avatar_url
+            ? '<img src="' + escapeHtml(profile.avatar_url) + '" alt="" style="width:80px;height:80px;border-radius:50%;margin-bottom:12px;object-fit:cover;">'
+            : '<div style="font-size:64px;margin-bottom:8px;">👤</div>') +
+        '<h3 style="margin-bottom:8px;">' + escapeHtml(profile?.username || username) + '</h3>' +
+        '<p style="color:var(--text2);margin-bottom:8px;">' + escapeHtml(profile?.bio || 'Aucune bio') + '</p>' +
+        '<p style="margin-bottom:4px;">' + getAvailabilityLabel(profile?.availability) + '</p>' +
+        '<p style="margin-bottom:16px;">🕐 ' + formatLastSeen(profile?.last_seen) + '</p>' +
+        '<div class="confirm-actions">' +
+        '<button class="secondary" id="closeModalBtn">Fermer</button>' +
+        '<button id="profileChatBtn">💬 Message</button>' +
+        '</div></div>';
     document.body.appendChild(modal);
-    document.getElementById('closeModalBtn').onclick = function() { modal.remove(); };
+    document.getElementById('closeModalBtn').onclick = () => modal.remove();
+    document.getElementById('profileChatBtn').onclick = () => {
+        modal.remove();
+        startChat(userId, profile?.username || username);
+    };
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
 export async function loadNearbyUsers() {
     if (!appState.position || !appState.user) return;
 
     const radius = parseFloat(document.getElementById('radiusKm')?.value || DEFAULT_RADIUS);
-    document.getElementById('radiusValue').innerHTML = radius + ' km';
+    const radiusEl = document.getElementById('radiusValue');
+    if (radiusEl) radiusEl.innerHTML = radius + ' km';
 
-    const users = await api.getNearbyUsers(
-        appState.position.lat,
-        appState.position.lng,
-        radius,
-        appState.user.id
-    );
+    const container = document.getElementById('nearbyList');
+    if (container) container.innerHTML = '<div class="info-card loading">Recherche…</div>';
+
+    let users;
+    try {
+        users = await api.getNearbyUsers(
+            appState.position.lat,
+            appState.position.lng,
+            radius,
+            appState.user.id
+        );
+    } catch (err) {
+        console.error('loadNearbyUsers:', err);
+        showNotification('Impossible de charger les personnes proches', true);
+        if (container) container.innerHTML = '<div class="info-card">⚠️ Erreur réseau — réessayez</div>';
+        return;
+    }
 
     setState('nearbyUsers', users);
 
-    const container = document.getElementById('nearbyList');
     if (!users || users.length === 0) {
-        container.innerHTML = '<div class="info-card">✨ Personne à proximité</div>';
+        if (container) container.innerHTML = '<div class="info-card">✨ Personne à proximité</div>';
         updateMapWithUsers([]);
         return;
     }
 
     let html = '';
     for (let u of users) {
-        html += '<div class="user-card" data-id="' + u.user_id + '" data-name="' + escapeHtml(u.username) + '" style="cursor:pointer;">' +
+        const safeName = escapeHtml(u.username || '?');
+        html += '<div class="user-card" data-id="' + u.user_id + '" data-name="' + safeName + '" style="cursor:pointer;">' +
             '<div class="user-card-avatar">' +
-            (u.avatar_url ? '<img src="' + escapeHtml(u.avatar_url) + '">' : '👤') +
+            (u.avatar_url ? '<img src="' + escapeHtml(u.avatar_url) + '" alt="">' : '👤') +
             '</div>' +
             '<div style="flex:1;">' +
-            '<div class="user-name">' + escapeHtml(u.username) + '</div>' +
+            '<div class="user-name">' + safeName + '</div>' +
             '<div class="user-distance">📏 ' + formatDistance(u.distance_km) + '</div>' +
             '<div class="user-distance">🕐 ' + formatLastSeen(u.last_seen) + '</div>' +
             '<div class="user-distance">' + getAvailabilityLabel(u.availability) + '</div>' +
             '</div>' +
-            '<button class="chat-btn" data-id="' + u.user_id + '" data-name="' + escapeHtml(u.username) + '">💬 Discuter</button>' +
+            '<button class="chat-btn" data-id="' + u.user_id + '" data-name="' + safeName + '">💬</button>' +
             '</div>';
     }
-    container.innerHTML = html;
+    if (container) container.innerHTML = html;
 
     updateMapWithUsers(users);
 
@@ -198,7 +236,6 @@ export async function loadNearbyUsers() {
         };
     });
 
-    // ✅ Cliquer n'importe où sur la carte utilisateur ouvre aussi le chat directement
     document.querySelectorAll('.user-card').forEach(card => {
         card.onclick = () => startChat(card.dataset.id, card.dataset.name);
     });
@@ -214,8 +251,8 @@ export function startGeolocation() {
     if (appState.watchId) stopGeolocation();
 
     document.getElementById('gpsStatus').innerHTML = '🟢 Recherche GPS...';
-    document.getElementById('enableGpsBtn').style.display = 'none';
-    document.getElementById('stopGpsBtn').style.display = 'block';
+    document.getElementById('enableGpsBtn').classList.add('hidden');
+    document.getElementById('stopGpsBtn').classList.remove('hidden');
 
     // ✅ CORRECTION : Timeout pour éviter le blocage infini
     let resolved = false;
@@ -232,9 +269,16 @@ export function startGeolocation() {
             clearTimeout(safetyTimeout);
             const position = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             updatePosition(position);
-            await api.updateLocation(appState.user.id, position.lat, position.lng);
-            await supabase.from('profiles').update({ last_seen: new Date() }).eq('id', appState.user.id);
-            document.getElementById('gpsStatus').innerHTML = `✅ GPS actif (${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`;
+            try {
+                if (appState.user?.id) {
+                    await api.updateLocation(appState.user.id, position.lat, position.lng);
+                    await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', appState.user.id);
+                }
+            } catch (err) {
+                console.error('GPS location sync:', err);
+            }
+            const statusEl = document.getElementById('gpsStatus');
+            if (statusEl) statusEl.innerHTML = `✅ GPS actif (${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`;
             if (!map) initMap();
             loadNearbyUsers();
         },
@@ -257,6 +301,6 @@ export function stopGeolocation() {
     }
     setState('isGpsActive', false);
     document.getElementById('gpsStatus').innerHTML = '📍 GPS arrêté';
-    document.getElementById('enableGpsBtn').style.display = 'block';
-    document.getElementById('stopGpsBtn').style.display = 'none';
+    document.getElementById('enableGpsBtn').classList.remove('hidden');
+    document.getElementById('stopGpsBtn').classList.add('hidden');
 }

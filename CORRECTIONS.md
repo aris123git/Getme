@@ -1,26 +1,28 @@
 # Getme — Corrections appliquées
 
-## ✅ Corrigé dans ce dossier
+## ✅ Corrigé (passe check & correct)
 
-1. **`js/main.js`** — tous les boutons sont maintenant câblés :
-   onglets, GPS (activer/arrêter/centrer), slider de rayon, profil (sauvegarder/avatar), chat (envoyer/fermer), admin (actualiser).
-2. **`js/profile.js`** — ajout de `loadProfileForm()` : le formulaire profil se pré-remplit avec les données existantes (nom, bio, téléphone, disponibilité, avatar) à l'ouverture de l'onglet.
-3. **`js/map.js`** — `loadNearbyUsers()` gère désormais les erreurs réseau/API au lieu de planter silencieusement.
-4. **`js/chat.js`** — ajout de `subscribeToGlobalMessages()` : une notification apparaît même si on reçoit un message en dehors du chat ouvert (avant : uniquement si le chat était déjà ouvert avec cette personne).
-5. **`_redirects`** et **`_headers`** ajoutés à la racine pour Netlify (routes SPA + en-têtes de sécurité de base).
-6. **Mode sombre/clair** — bouton 🌙/☀️ en haut à droite, choix mémorisé dans `localStorage`. Transitions douces sur les couleurs.
-7. **Animations** — apparition en fondu des onglets et des cartes utilisateurs.
-8. **Loader sur boutons** (`saveProfileBtn`, `sendMsgBtn`) pendant les actions asynchrones.
-9. **Modale de confirmation custom** remplace `confirm()` natif dans `unlockUser()`.
+1. **GPS Stop/Start** — le bouton « Arrêter » n'apparaissait jamais : `.hidden { display:none !important }` écrasait `style.display`. Utilisation de `classList` partout.
+2. **Service Worker** — enregistrement manquant ; le bouton 🔄 vider le cache n'était pas câblé. Les deux sont branchés.
+3. **Notifications chat globales** — `subscribeToGlobalMessages()` est appelée après login (auparavant définie mais jamais utilisée).
+4. **Loaders** — `saveProfileBtn` et `sendMsgBtn` utilisent `withLoading` pendant les actions async.
+5. **Carte / nearby** — `loadNearbyUsers()` gère les erreurs réseau ; popup « Profil » ouvre vraiment le profil (avant : doublon Message/Discuter) ; blocage via modale custom.
+6. **Chat** — `startChat()` bascule automatiquement sur l'onglet Messages ; gestion d'erreurs sur chargement/envoi.
+7. **Profil** — gestion d'erreurs sur save/upload/balance ; `reportUser` tente d'écrire dans `reports` avec fallback.
+8. **Auth** — logs debug retirés ; logout ne réinitialise plus le thème ; validation MDP min 6 caractères.
+9. **utils.compressImage** — early-return manquant (risque de double resolve).
+10. **API.py** — import manquant de `SMSParser` depuis `ParseurSMS`.
+11. **manifest.json** — renommé Nearby → Getme ; couleurs alignées.
+12. **Thème clair** — header/tabs sticky et modales respectent les variables light.
 
-## ⚠️ Pas encore fait (nécessite des décisions ou un accès à ta base Supabase)
+## ⚠️ Pas encore fait (nécessite Supabase)
 
-- **Onglet Admin** : entièrement vide côté logique. Il faut créer une table `reports` (et/ou un champ `banned` sur `profiles`) + les fonctions `api.getReports()` / `api.getBannedUsers()` correspondantes.
-- **Vérification des RLS (Row Level Security)** sur Supabase : à faire côté tableau de bord Supabase, je n'ai pas accès à ton projet.
-- **Pagination / clustering** de la liste de personnes à proximité si le nombre d'utilisateurs grossit (nécessite des changements côté Supabase/RPC).
+- Table `reports` + champ `banned` / RPC admin pour l'onglet Admin.
+- Vérification RLS côté tableau de bord Supabase.
+- Pagination / clustering si beaucoup d'utilisateurs à proximité.
 
-## Comment déployer
+## Déploiement
 
-1. Remplace ton dossier GitHub par celui-ci (ou pousse ces fichiers).
-2. Vérifie que les noms de tables Supabase (`profiles`, `locations`, `messages`, `unlocks`) correspondent bien à ta base.
-3. Redéploie sur Netlify — `_redirects` et `_headers` seront pris en compte automatiquement.
+1. Pousse ces fichiers et redéploie Netlify.
+2. Vérifie les tables : `profiles`, `locations`, `messages`, `unlocks` (+ optionnel `reports`, `transactions`).
+3. Après déploiement, vide le cache (bouton 🔄) ou hard-refresh pour charger `sw.js` v3.2.0.

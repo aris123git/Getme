@@ -1,11 +1,11 @@
 {
-    "name": "Nearby",
-    "short_name": "Nearby",
+    "name": "Getme",
+    "short_name": "Getme",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0f172a",
-    "theme_color": "#0f172a",
-    "description": "Rencontrez des personnes proches de vous",
+    "background_color": "#07080f",
+    "theme_color": "#07080f",
+    "description": "Rencontrez des âmes proches de vous",
     "icons": [
         {
             "src": "icons/icon-192.png",

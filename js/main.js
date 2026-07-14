@@ -1,10 +1,12 @@
 import { supabase } from './supabaseClient.js';
 import { handleAuthChange, login, signUp, logout } from './auth.js';
-import { showNotification, setTabActive } from './ui.js';
+import { showNotification, setTabActive, withLoading } from './ui.js';
 import { startGeolocation, stopGeolocation, centerMapOnUser, loadNearbyUsers, debouncedLoadNearby } from './map.js';
-import { loadConversations, sendMessage, closeChat } from './chat.js';
+import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages } from './chat.js';
 import { updateProfile, uploadAvatar, refreshBalance, loadProfileForm } from './profile.js';
 import { appState } from './state.js';
+
+const CACHE_VERSION = 'v3.2.0';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
@@ -49,8 +51,14 @@ function initMapListeners() {
         radiusInput.oninput = () => {
             const val = document.getElementById('radiusValue');
             if (val) val.innerHTML = `${radiusInput.value} km`;
+            // Sync range fill visual
+            const pct = ((radiusInput.value - radiusInput.min) / (radiusInput.max - radiusInput.min)) * 100;
+            radiusInput.style.backgroundSize = `${pct}% 100%`;
             debouncedLoadNearby();
         };
+        // Init fill
+        const pct = ((radiusInput.value - radiusInput.min) / (radiusInput.max - radiusInput.min)) * 100;
+        radiusInput.style.backgroundSize = `${pct}% 100%`;
     }
 }
 
@@ -59,13 +67,22 @@ function initProfileListeners() {
     const saveBtn = document.getElementById('saveProfileBtn');
     const avatar = document.getElementById('profileAvatar');
     const avatarInput = document.getElementById('avatarInput');
+    const rechargeBtn = document.getElementById('rechargeBtn');
 
-    if (saveBtn) saveBtn.onclick = updateProfile;
+    if (saveBtn) {
+        saveBtn.onclick = withLoading(saveBtn, updateProfile, '⏳ Enregistrement…');
+    }
     if (avatar) avatar.onclick = () => avatarInput?.click();
     if (avatarInput) {
         avatarInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) uploadAvatar(file);
+        };
+    }
+    if (rechargeBtn) {
+        rechargeBtn.classList.remove('hidden');
+        rechargeBtn.onclick = () => {
+            showNotification('📱 Envoyez un paiement Orange Money / Wave — le solde se mettra à jour automatiquement');
         };
     }
 }
@@ -76,10 +93,12 @@ function initChatListeners() {
     const msgInput = document.getElementById('messageInput');
     const closeBtn = document.getElementById('closeChatBtn');
 
-    if (sendBtn) sendBtn.onclick = sendMessage;
+    if (sendBtn) {
+        sendBtn.onclick = withLoading(sendBtn, sendMessage, '⏳');
+    }
     if (msgInput) {
         msgInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') sendBtn?.click();
+            if (e.key === 'Enter' && !sendBtn?.disabled) sendBtn?.click();
         });
     }
     if (closeBtn) closeBtn.onclick = closeChat;
@@ -89,8 +108,12 @@ function initChatListeners() {
 async function loadAdminData() {
     const reportsList = document.getElementById('reportsList');
     const bannedList = document.getElementById('bannedList');
-    if (reportsList) reportsList.innerHTML = 'Fonctionnalité admin à implémenter';
-    if (bannedList) bannedList.innerHTML = 'Fonctionnalité admin à implémenter';
+    if (reportsList) {
+        reportsList.innerHTML = '<div class="info-card">Les signalements apparaîtront ici une fois la table <code>reports</code> créée sur Supabase.</div>';
+    }
+    if (bannedList) {
+        bannedList.innerHTML = '<div class="info-card">Aucun utilisateur banni pour le moment.</div>';
+    }
 }
 
 function initAdminListeners() {
@@ -121,6 +144,38 @@ function initThemeToggle() {
     };
 }
 
+// ── CLEAR CACHE ──
+function initClearCache() {
+    const btn = document.getElementById('clearCacheBtn');
+    if (!btn) return;
+    btn.onclick = async () => {
+        try {
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage('clearCache');
+            }
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(k => caches.delete(k)));
+            }
+            showNotification('🔄 Cache vidé — rechargement…');
+            setTimeout(() => window.location.reload(), 600);
+        } catch (err) {
+            console.error(err);
+            showNotification('Impossible de vider le cache', true);
+        }
+    };
+}
+
+// ── SERVICE WORKER ──
+async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+        await navigator.serviceWorker.register(`/sw.js?v=${CACHE_VERSION}`);
+    } catch (err) {
+        console.warn('SW registration failed:', err);
+    }
+}
+
 function initEventListeners() {
     initAuthListeners();
     initTabListeners();
@@ -129,24 +184,38 @@ function initEventListeners() {
     initChatListeners();
     initAdminListeners();
     initThemeToggle();
+    initClearCache();
 }
 
 async function syncUserState() {
     const user = await handleAuthChange();
-    appState.user = user; // ✅ Mis à jour à CHAQUE changement (login, logout, refresh de session)
+    appState.user = user;
     if (user) {
         await refreshBalance();
+        subscribeToGlobalMessages(user.id, () => {
+            // Refresh conversations badge if on messages tab
+            const messagesTab = document.getElementById('messagesTab');
+            if (messagesTab && !messagesTab.classList.contains('hidden')) {
+                loadConversations();
+            }
+        });
+        // Show admin tab for designated admins (email-based for now)
+        const adminEmails = ['admin@getme.app'];
+        const adminBtn = document.getElementById('adminTabBtn');
+        if (adminBtn && adminEmails.includes(user.email)) {
+            adminBtn.style.display = '';
+        }
     }
     return user;
 }
 
 async function init() {
-    // ✅ Recharge la page quand un nouveau SW prend le contrôle
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             window.location.reload();
         });
     }
+    await registerServiceWorker();
     initEventListeners();
     supabase.auth.onAuthStateChange(() => syncUserState());
     await syncUserState();

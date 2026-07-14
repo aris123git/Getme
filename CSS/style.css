@@ -286,6 +286,14 @@ button.warning {
   border: 1px solid rgba(212,168,83,0.2);
 }
 
+button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+}
+button:disabled:hover::after { background: transparent; }
+button:disabled:active { transform: none; }
+
 button.small {
   width: auto;
   padding: 7px 14px;
@@ -343,6 +351,9 @@ button.chat-btn {
   padding: 14px 20px;
   margin-bottom: 0;
 }
+[data-theme="light"] .card.header-card {
+  background: rgba(255,255,255,0.88);
+}
 
 .card { background: var(--card); border-radius: var(--r-lg); padding: 20px; margin-bottom: 12px; border: 1px solid var(--border); }
 
@@ -386,6 +397,9 @@ button.chat-btn {
   position: sticky;
   top: 73px;
   z-index: 90;
+}
+[data-theme="light"] .tabs {
+  background: rgba(255,255,255,0.85);
 }
 
 .tab {
@@ -632,7 +646,7 @@ select option { background: var(--bg3); color: var(--text1); }
   z-index: 9999;
 }
 .confirm-box {
-  background: #11131f;
+  background: var(--card, #11131f);
   border: 1px solid var(--border2, #2a2d3d);
   border-radius: var(--r-lg, 12px);
   padding: 20px;
@@ -641,9 +655,12 @@ select option { background: var(--bg3); color: var(--text1); }
   text-align: center;
 }
 .confirm-box p {
-  color: #fff;
+  color: var(--text1, #fff);
   margin-bottom: 16px;
   font-size: 14px;
+}
+.confirm-box h3 {
+  color: var(--text1);
 }
 .confirm-actions {
   display: flex; gap: 10px; justify-content: center;

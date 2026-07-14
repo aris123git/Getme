@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from ParseurSMS import SMSParser
 
 app = Flask(__name__)
 parser = SMSParser()

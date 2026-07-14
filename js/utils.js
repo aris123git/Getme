@@ -28,7 +28,13 @@ export function validateUsername(username) {
 
 export async function retry(fn, retries = 3, delay = 1000) {
     try {
-        return await fn();
+        const result = await fn();
+        // Supabase-style { error } responses: retry on error when retries remain
+        if (result && typeof result === 'object' && result.error && retries > 0) {
+            await new Promise(r => setTimeout(r, delay));
+            return retry(fn, retries - 1, delay);
+        }
+        return result;
     } catch (error) {
         if (retries === 0) throw error;
         await new Promise(r => setTimeout(r, delay));
@@ -38,7 +44,10 @@ export async function retry(fn, retries = 3, delay = 1000) {
 
 export function compressImage(file) {
     return new Promise((resolve, reject) => {
-        if (file.size <= 1024 * 1024) resolve(file);
+        if (file.size <= 1024 * 1024) {
+            resolve(file);
+            return;
+        }
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = e => {
@@ -52,8 +61,19 @@ export function compressImage(file) {
                 if (h > max) { w = (w * max) / h; h = max; }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                canvas.toBlob(b => resolve(new File([b], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.7);
+                canvas.toBlob(
+                    b => {
+                        if (!b) {
+                            reject(new Error('Compression échouée'));
+                            return;
+                        }
+                        resolve(new File([b], file.name, { type: 'image/jpeg' }));
+                    },
+                    'image/jpeg',
+                    0.7
+                );
             };
+            img.onerror = () => reject(new Error('Image illisible'));
         };
         reader.onerror = reject;
     });

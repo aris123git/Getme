@@ -5,38 +5,52 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function parseSmsAmountAndPhone(text) {
+    if (!text) return null;
+    const amountMatch =
+        text.match(/reçu\s+([\d\s]+)\s*F\s*CFA/i) ||
+        text.match(/(?:Montant|montant)[:\s]+([\d\s]+)\s*F\s*CFA/i) ||
+        text.match(/Virement de\s+([\d\s]+)\s*FCFA/i);
+    const phoneMatch = text.match(/(\+226\d{8})/);
+    if (!amountMatch || !phoneMatch) return null;
+    return {
+        amount: parseInt(amountMatch[1].replace(/\s/g, ''), 10),
+        phone: phoneMatch[1]
+    };
+}
+
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method not allowed' };
     }
 
     try {
-        const { sender, text } = JSON.parse(event.body);
+        const body = JSON.parse(event.body || '{}');
+        const text = body.text || body.message || '';
+        const parsed = parseSmsAmountAndPhone(text);
 
-        const amountMatch = text.match(/reçu (\d+) FCFA/);
-        const senderMatch = text.match(/de (\+226\d+)/);
-
-        if (!amountMatch || !senderMatch) {
+        if (!parsed) {
             return { statusCode: 200, body: 'SMS non reconnu' };
         }
 
-        const amount = parseInt(amountMatch[1]);
-        const phone = senderMatch[1];
+        const { amount, phone } = parsed;
 
-        const { data: user } = await supabase
+        const { data: user, error: userError } = await supabase
             .from('profiles')
             .select('id')
             .eq('phone', phone)
-            .single();
+            .maybeSingle();
 
+        if (userError) throw userError;
         if (!user) {
             return { statusCode: 200, body: 'Utilisateur non trouvé' };
         }
 
-        await supabase.rpc('credit_balance', {
+        const { error: creditError } = await supabase.rpc('credit_balance', {
             user_id: user.id,
             amount: amount
         });
+        if (creditError) throw creditError;
 
         await supabase.from('transactions').insert({
             user_id: user.id,
