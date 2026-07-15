@@ -57,7 +57,7 @@ export async function signUp(email, password) {
         return false;
     }
 
-    await setAuthBusy(true);
+    await setAuthBusy(true, 'signup');
     setAuthMsg('Création du compte…');
     try {
         const { data, error } = await supabase.auth.signUp({
@@ -98,8 +98,7 @@ export async function login(email, password) {
         return false;
     }
 
-    await setAuthBusy(true);
-    setAuthMsg('Connexion…');
+    await setAuthBusy(true, 'login');
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
             email: cleanEmail,
