@@ -3,8 +3,8 @@
     "short_name": "Getme",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#07080f",
-    "theme_color": "#07080f",
+    "background_color": "#e9eef2",
+    "theme_color": "#0b7a6a",
     "description": "Rencontrez des âmes proches de vous",
     "icons": [
         {

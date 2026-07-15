@@ -83,7 +83,7 @@ export async function refreshBalance() {
         updateBalance(balance);
         const balEl = document.getElementById('userBalance');
         const displayEl = document.getElementById('balanceDisplay');
-        if (balEl) balEl.innerHTML = `💰 ${balance} FCFA`;
+        if (balEl) balEl.innerHTML = `${balance} FCFA`;
         if (displayEl) displayEl.innerHTML = balance;
         return balance;
     } catch (err) {
@@ -112,7 +112,7 @@ export async function unlockUser(targetId, targetName) {
             target_id: targetId
         });
         if (error) throw error;
-        showNotification(`✅ ${targetName} débloqué gratuitement (mode test)`);
+        showNotification(`${targetName} débloqué (mode test)`);
         loadNearbyUsers();
     } catch (err) {
         console.error('unlockUser:', err);
@@ -128,7 +128,7 @@ export async function blockUser(targetId) {
             blocked: targetId
         });
         if (error) throw error;
-        showNotification("🚫 Utilisateur bloqué");
+        showNotification("Utilisateur bloqué");
         loadNearbyUsers();
     } catch (err) {
         console.error('blockUser:', err);
@@ -152,7 +152,7 @@ export async function reportUser(targetId, reason) {
             console.log('Signalement (non sauvegardé) :', { targetId, reason });
             return;
         }
-        showNotification("🚨 Signalement envoyé — merci");
+        showNotification("Signalement envoyé — merci");
     } catch (err) {
         console.error('reportUser:', err);
         showNotification("Signalement reçu localement — fonctionnalité complète à venir");

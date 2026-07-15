@@ -32,28 +32,28 @@ export function initMap() {
 export function centerMapOnUser() {
     if (map && appState.position) {
         map.setView([appState.position.lat, appState.position.lng], 15);
-        showNotification("📍 Centré sur votre position");
+        showNotification("Centré sur votre position");
     } else {
         showNotification("Position non disponible", true);
     }
 }
 
 function formatLastSeen(date) {
-    if (!date) return "Jamais";
+    if (!date) return "Jamais vu";
     const diff = Math.floor((new Date() - new Date(date)) / 1000 / 60);
-    if (diff < 5) return "🟢 Actif maintenant";
-    if (diff < 60) return `🟡 Actif il y a ${diff} min`;
-    if (diff < 1440) return `🟠 Actif aujourd'hui`;
-    return `⚫ Actif il y a ${Math.floor(diff / 1440)} jours`;
+    if (diff < 5) return "Actif maintenant";
+    if (diff < 60) return `Actif il y a ${diff} min`;
+    if (diff < 1440) return `Actif aujourd'hui`;
+    return `Actif il y a ${Math.floor(diff / 1440)} j`;
 }
 
 function getAvailabilityLabel(availability) {
     const labels = {
-        'now': '🟢 Disponible maintenant',
-        'today': '📅 Disponible aujourd\'hui',
-        'week': '📆 Disponible cette semaine'
+        'now': 'Disponible maintenant',
+        'today': 'Disponible aujourd\'hui',
+        'week': 'Disponible cette semaine'
     };
-    return labels[availability] || '🟡 Statut inconnu';
+    return labels[availability] || 'Statut inconnu';
 }
 
 function updateMapWithUsers(users) {
@@ -68,8 +68,9 @@ function updateMapWithUsers(users) {
     if (appState.position) {
         const myMarker = L.marker([appState.position.lat, appState.position.lng], {
             icon: L.divIcon({
-                html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px #3b82f6;"></div>',
-                iconSize: [20, 20]
+                className: 'getme-marker',
+                html: '<div style="background:#0b7a6a;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(16,42,45,0.25);"></div>',
+                iconSize: [18, 18]
             })
         }).addTo(map).bindPopup('<b>Vous</b>');
         userMarkers.push(myMarker);
@@ -83,22 +84,22 @@ function updateMapWithUsers(users) {
 
         const m = L.marker([u.lat, u.lng], {
             icon: L.divIcon({
-                html: '<div style="background:#22c55e;width:20px;height:20px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;">' + initial + '</div>',
-                iconSize: [20, 20]
+                className: 'getme-marker',
+                html: '<div style="background:#e07a3d;width:22px;height:22px;border-radius:8px;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;font-family:Outfit,sans-serif;box-shadow:0 2px 8px rgba(16,42,45,0.2);">' + initial + '</div>',
+                iconSize: [22, 22]
             })
         }).addTo(map);
 
-        const popupContent = '<div style="min-width:220px; text-align:center;">' +
-            '<strong style="font-size:16px;">' + safeName + '</strong><br>' +
-            '📏 ' + formatDistance(u.distance_km) + '<br>' +
-            '🕐 ' + formatLastSeen(u.last_seen) + '<br>' +
-            getAvailabilityLabel(u.availability) + '<br>' +
-            '<hr style="margin:8px 0;">' +
-            '<button id="popup-chat-' + u.user_id + '" class="popup-btn" style="background:#3b82f6; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">💬 Message</button>' +
-            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#334155; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">👤 Profil</button>' +
-            '<button id="popup-route-' + u.user_id + '" class="popup-btn" style="background:#22c55e; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">📍 Itinéraire</button>' +
-            '<button id="popup-report-' + u.user_id + '" class="popup-btn" style="background:#ef4444; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚨 Signaler</button>' +
-            '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:#7f1d1d; margin:4px; padding:6px 12px; border:none; border-radius:20px; color:white;">🚫 Bloquer</button>' +
+        const popupContent = '<div style="min-width:200px; text-align:left; font-family:Outfit,sans-serif;">' +
+            '<strong style="font-size:15px;">' + safeName + '</strong><br>' +
+            '<span style="color:#4a6066;font-size:12px;">' + formatDistance(u.distance_km) + ' · ' + formatLastSeen(u.last_seen) + '</span><br>' +
+            '<span style="color:#0b7a6a;font-size:12px;">' + getAvailabilityLabel(u.availability) + '</span><br>' +
+            '<hr style="margin:10px 0;border:none;border-top:1px solid #dfe7ee;">' +
+            '<button id="popup-chat-' + u.user_id + '" class="popup-btn" style="background:#0b7a6a; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:white; font-weight:600;">Message</button>' +
+            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#dfe7ee; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:#102a2d; font-weight:600;">Profil</button>' +
+            '<button id="popup-route-' + u.user_id + '" class="popup-btn" style="background:#e07a3d; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:white; font-weight:600;">Itinéraire</button>' +
+            '<button id="popup-report-' + u.user_id + '" class="popup-btn" style="background:#fff; margin:3px; padding:7px 12px; border:1px solid #c94444; border-radius:10px; color:#c94444; font-weight:600;">Signaler</button>' +
+            '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:#fff; margin:3px; padding:7px 12px; border:1px solid #c94444; border-radius:10px; color:#c94444; font-weight:600;">Bloquer</button>' +
             '</div>';
         m.bindPopup(popupContent);
 
@@ -157,15 +158,15 @@ async function showUserProfile(userId, username) {
     modal.className = 'profile-modal-overlay confirm-overlay';
     modal.innerHTML = '<div class="confirm-box" style="max-width:320px;">' +
         (profile?.avatar_url
-            ? '<img src="' + escapeHtml(profile.avatar_url) + '" alt="" style="width:80px;height:80px;border-radius:50%;margin-bottom:12px;object-fit:cover;">'
-            : '<div style="font-size:64px;margin-bottom:8px;">👤</div>') +
+            ? '<img src="' + escapeHtml(profile.avatar_url) + '" alt="" style="width:80px;height:80px;border-radius:16px;margin-bottom:12px;object-fit:cover;">'
+            : '<div class="avatar" style="width:80px;height:80px;margin:0 auto 12px;font-size:28px;">' + escapeHtml((profile?.username || username || '?').charAt(0).toUpperCase()) + '</div>') +
         '<h3 style="margin-bottom:8px;">' + escapeHtml(profile?.username || username) + '</h3>' +
         '<p style="color:var(--text2);margin-bottom:8px;">' + escapeHtml(profile?.bio || 'Aucune bio') + '</p>' +
         '<p style="margin-bottom:4px;">' + getAvailabilityLabel(profile?.availability) + '</p>' +
-        '<p style="margin-bottom:16px;">🕐 ' + formatLastSeen(profile?.last_seen) + '</p>' +
+        '<p style="margin-bottom:16px;">' + formatLastSeen(profile?.last_seen) + '</p>' +
         '<div class="confirm-actions">' +
         '<button class="secondary" id="closeModalBtn">Fermer</button>' +
-        '<button id="profileChatBtn">💬 Message</button>' +
+        '<button id="profileChatBtn">Message</button>' +
         '</div></div>';
     document.body.appendChild(modal);
     document.getElementById('closeModalBtn').onclick = () => modal.remove();
@@ -197,14 +198,14 @@ export async function loadNearbyUsers() {
     } catch (err) {
         console.error('loadNearbyUsers:', err);
         showNotification('Impossible de charger les personnes proches', true);
-        if (container) container.innerHTML = '<div class="info-card">⚠️ Erreur réseau — réessayez</div>';
+        if (container) container.innerHTML = '<div class="info-card">Erreur réseau — réessayez</div>';
         return;
     }
 
     setState('nearbyUsers', users);
 
     if (!users || users.length === 0) {
-        if (container) container.innerHTML = '<div class="info-card">✨ Personne à proximité</div>';
+        if (container) container.innerHTML = '<div class="info-card">Personne à proximité pour le moment</div>';
         updateMapWithUsers([]);
         return;
     }
@@ -212,17 +213,18 @@ export async function loadNearbyUsers() {
     let html = '';
     for (let u of users) {
         const safeName = escapeHtml(u.username || '?');
-        html += '<div class="user-card" data-id="' + u.user_id + '" data-name="' + safeName + '" style="cursor:pointer;">' +
+        const initial = escapeHtml((u.username || '?').charAt(0).toUpperCase());
+        html += '<div class="user-card" data-id="' + u.user_id + '" data-name="' + safeName + '">' +
             '<div class="user-card-avatar">' +
-            (u.avatar_url ? '<img src="' + escapeHtml(u.avatar_url) + '" alt="">' : '👤') +
+            (u.avatar_url ? '<img src="' + escapeHtml(u.avatar_url) + '" alt="">' : initial) +
             '</div>' +
             '<div style="flex:1;">' +
             '<div class="user-name">' + safeName + '</div>' +
-            '<div class="user-distance">📏 ' + formatDistance(u.distance_km) + '</div>' +
-            '<div class="user-distance">🕐 ' + formatLastSeen(u.last_seen) + '</div>' +
+            '<div class="user-distance">' + formatDistance(u.distance_km) + '</div>' +
+            '<div class="user-distance">' + formatLastSeen(u.last_seen) + '</div>' +
             '<div class="user-distance">' + getAvailabilityLabel(u.availability) + '</div>' +
             '</div>' +
-            '<button class="chat-btn" data-id="' + u.user_id + '" data-name="' + safeName + '">💬</button>' +
+            '<button class="chat-btn" data-id="' + u.user_id + '" data-name="' + safeName + '">→</button>' +
             '</div>';
     }
     if (container) container.innerHTML = html;
@@ -250,7 +252,7 @@ export function startGeolocation() {
     }
     if (appState.watchId) stopGeolocation();
 
-    document.getElementById('gpsStatus').innerHTML = '🟢 Recherche GPS...';
+    document.getElementById('gpsStatus').innerHTML = 'Recherche GPS…';
     document.getElementById('enableGpsBtn').classList.add('hidden');
     document.getElementById('stopGpsBtn').classList.remove('hidden');
 
@@ -278,7 +280,7 @@ export function startGeolocation() {
                 console.error('GPS location sync:', err);
             }
             const statusEl = document.getElementById('gpsStatus');
-            if (statusEl) statusEl.innerHTML = `✅ GPS actif (${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`;
+            if (statusEl) statusEl.innerHTML = `GPS actif · ${position.lat.toFixed(3)}, ${position.lng.toFixed(3)}`;
             if (!map) initMap();
             loadNearbyUsers();
         },
@@ -300,7 +302,7 @@ export function stopGeolocation() {
         setState('watchId', null);
     }
     setState('isGpsActive', false);
-    document.getElementById('gpsStatus').innerHTML = '📍 GPS arrêté';
+    document.getElementById('gpsStatus').innerHTML = 'GPS arrêté';
     document.getElementById('enableGpsBtn').classList.remove('hidden');
     document.getElementById('stopGpsBtn').classList.add('hidden');
 }

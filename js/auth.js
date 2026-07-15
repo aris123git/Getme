@@ -15,7 +15,7 @@ export async function signUp(email, password) {
         showNotification(error.message, true);
         return false;
     }
-    showNotification("✅ Compte créé ! Vérifiez votre email si demandé, puis connectez-vous");
+    showNotification("Compte créé ! Vérifiez votre email si demandé, puis connectez-vous");
     return true;
 }
 
@@ -29,13 +29,13 @@ export async function login(email, password) {
         showNotification(error.message, true);
         return false;
     }
-    showNotification("✅ Connexion réussie !");
+    showNotification("Connexion réussie");
     return true;
 }
 
 export async function logout() {
     await supabase.auth.signOut();
-    showNotification("🔓 Déconnecté");
+    showNotification("Déconnecté");
 }
 
 export async function handleAuthChange() {

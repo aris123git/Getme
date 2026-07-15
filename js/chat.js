@@ -19,7 +19,7 @@ function toastNewMessage() {
     const now = Date.now();
     if (now - lastToastAt < 2500) return;
     lastToastAt = now;
-    showNotification('📩 Nouveau message reçu');
+    showNotification('Nouveau message reçu');
 }
 
 function sameId(a, b) {
@@ -249,7 +249,7 @@ export async function loadConversations() {
     } catch (err) {
         console.error('loadConversations:', err);
         showNotification('Impossible de charger les conversations', true);
-        if (container) container.innerHTML = '<div class="info-card">⚠️ Erreur réseau</div>';
+        if (container) container.innerHTML = '<div class="info-card">Erreur réseau</div>';
         return;
     }
 
@@ -258,20 +258,22 @@ export async function loadConversations() {
     updateMessagesTabBadge(total);
 
     if (!conversations || conversations.length === 0) {
-        if (container) container.innerHTML = '<div class="info-card">🔒 Débloquez quelqu\'un pour chatter</div>';
+        if (container) container.innerHTML = '<div class="info-card">Débloquez quelqu\'un pour commencer à discuter</div>';
         return;
     }
-    container.innerHTML = conversations.map(c => `
+    container.innerHTML = conversations.map(c => {
+        const initial = escapeHtml((c.username || '?').charAt(0).toUpperCase());
+        return `
         <div class="user-card" data-id="${c.other_user_id}" data-name="${escapeHtml(c.username)}">
-            <div class="user-card-avatar">${c.avatar_url ? `<img src="${escapeHtml(c.avatar_url)}" alt="">` : '👤'}</div>
+            <div class="user-card-avatar">${c.avatar_url ? `<img src="${escapeHtml(c.avatar_url)}" alt="">` : initial}</div>
             <div style="flex:1;">
-                <div style="color:var(--text1); font-weight:600;">${escapeHtml(c.username)}</div>
-                <div style="font-size:11px; color:var(--text3);">${escapeHtml(c.last_message || 'Nouvelle conversation')}</div>
+                <div class="user-name">${escapeHtml(c.username)}</div>
+                <div class="user-distance">${escapeHtml(c.last_message || 'Nouvelle conversation')}</div>
             </div>
-            ${c.unread_count > 0 ? `<span class="badge" style="background:#ef4444;color:#fff;">${c.unread_count}</span>` : ''}
-            <button class="chat-btn" data-id="${c.other_user_id}" data-name="${escapeHtml(c.username)}">💬</button>
-        </div>
-    `).join('');
+            ${c.unread_count > 0 ? `<span class="badge badge-unread">${c.unread_count}</span>` : ''}
+            <button class="chat-btn" data-id="${c.other_user_id}" data-name="${escapeHtml(c.username)}">→</button>
+        </div>`;
+    }).join('');
     document.querySelectorAll('#conversationsList .chat-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.stopPropagation();
@@ -297,7 +299,7 @@ export async function startChat(userId, userName) {
     renderedMessageIds.clear();
 
     setState('currentChat', userId);
-    document.getElementById('chatWith').innerHTML = `💬 ${escapeHtml(userName)}`;
+    document.getElementById('chatWith').innerHTML = escapeHtml(userName);
     document.getElementById('conversationsList').classList.add('hidden');
     document.getElementById('chatView').classList.remove('hidden');
 
@@ -312,7 +314,7 @@ export async function startChat(userId, userName) {
     } catch (err) {
         console.error('startChat:', err);
         showNotification('Impossible de charger les messages', true);
-        container.innerHTML = '<div class="info-card">⚠️ Erreur réseau</div>';
+        container.innerHTML = '<div class="info-card">Erreur réseau</div>';
         return;
     }
 

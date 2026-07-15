@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <meta name="theme-color" content="#07080f">
+  <meta name="theme-color" content="#e9eef2">
   <meta name="description" content="Getme – Rencontrez des âmes proches de vous">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.json">
@@ -11,122 +11,150 @@
   <title>Getme – Rencontres de proximité</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
   <link rel="stylesheet" href="CSS/style.css">
 </head>
 <body>
-<div class="container">
+<div class="app-shell">
 
   <!-- ── AUTH SCREEN ── -->
   <div id="authScreen">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <div class="logo-mark">💫</div>
+    <div class="auth-atmosphere" aria-hidden="true"></div>
+    <div class="auth-stage">
+      <div class="auth-brand">
+        <div class="logo-mark" aria-hidden="true">
+          <span class="logo-dot"></span>
+        </div>
         <h1>Getme</h1>
-        <p>Rencontrez des âmes proches de vous</p>
+        <p class="auth-tagline">Rencontrez des âmes proches de vous</p>
       </div>
-      <div id="authMsg"></div>
-      <input type="email"    id="email"    placeholder="Adresse email">
-      <input type="password" id="password" placeholder="Mot de passe">
-      <button id="signupBtn">✨ Créer un compte</button>
-      <button id="loginBtn" class="secondary">🔑 Se connecter</button>
+
+      <form class="auth-form" id="authForm" onsubmit="return false;">
+        <div id="authMsg"></div>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="email" placeholder="vous@email.com" autocomplete="email">
+        </label>
+        <label class="field">
+          <span>Mot de passe</span>
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        </label>
+        <div class="auth-actions">
+          <button type="button" id="signupBtn">Créer un compte</button>
+          <button type="button" id="loginBtn" class="secondary">Se connecter</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <!-- ── MAIN SCREEN ── -->
   <div id="mainScreen" class="hidden">
 
-    <!-- Header -->
-    <div class="card header-card">
+    <header class="app-header">
       <div class="header-content">
         <div class="profile-header">
-          <div class="avatar" id="profileAvatar">💫</div>
+          <div class="avatar" id="profileAvatar" title="Changer la photo">G</div>
           <input type="file" id="avatarInput" accept="image/*" style="display:none;">
-          <div>
+          <div class="header-identity">
+            <span class="brand-inline">Getme</span>
             <span id="userName"></span>
-            <div id="userBalance">💰 0 FCFA</div>
+            <div id="userBalance">0 FCFA</div>
           </div>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button id="clearCacheBtn" class="small secondary" title="Vider le cache">🔄</button>
-          <button id="themeToggleBtn" class="small" title="Changer de thème">🌙</button>
-          <button id="logoutBtn" class="danger small">Déconnexion</button>
+        <div class="header-actions">
+          <button id="clearCacheBtn" class="icon-btn secondary" title="Vider le cache" type="button">↻</button>
+          <button id="themeToggleBtn" class="icon-btn" title="Changer de thème" type="button">◐</button>
+          <button id="logoutBtn" class="danger small" type="button">Sortir</button>
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- Tabs -->
-    <div class="card tabs-card">
-      <div class="tabs">
-        <div class="tab active" data-tab="map">🗺️ Carte</div>
-        <div class="tab" data-tab="messages">💬 Messages</div>
-        <div class="tab" data-tab="profile">👤 Profil</div>
-        <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">🛡️ Admin</div>
-      </div>
+    <nav class="tabs" aria-label="Navigation">
+      <div class="tab active" data-tab="map">Carte</div>
+      <div class="tab" data-tab="messages">Messages</div>
+      <div class="tab" data-tab="profile">Profil</div>
+      <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">Admin</div>
+    </nav>
+
+    <main class="app-main">
 
       <!-- TAB CARTE -->
-      <div id="mapTab">
-        <div id="gpsStatus" class="info-card">📍 Activez votre position pour commencer</div>
+      <section id="mapTab">
+        <div id="gpsStatus" class="info-card">Activez votre position pour commencer</div>
         <div class="button-group">
-          <button id="enableGpsBtn">📍 Activer GPS</button>
-          <button id="stopGpsBtn" class="secondary hidden">🛑 Arrêter</button>
+          <button id="enableGpsBtn" type="button">Activer GPS</button>
+          <button id="stopGpsBtn" class="secondary hidden" type="button">Arrêter</button>
         </div>
         <div class="radius-slider">
-          <span>📏 Rayon :</span>
+          <span>Rayon</span>
           <input type="range" id="radiusKm" min="1" max="20" value="5">
           <span id="radiusValue">5 km</span>
         </div>
-        <button id="centerMapBtn" class="secondary">🎯 Centrer sur moi</button>
-        <div id="map"></div>
+        <button id="centerMapBtn" class="secondary" type="button">Centrer sur moi</button>
+        <div id="map" role="application" aria-label="Carte des personnes proches"></div>
         <div id="nearbyList"></div>
-      </div>
+      </section>
 
       <!-- TAB MESSAGES -->
-      <div id="messagesTab" class="hidden">
+      <section id="messagesTab" class="hidden">
         <div id="conversationsList" class="loading">Chargement</div>
         <div id="chatView" class="hidden">
           <div id="chatWith"></div>
           <div id="chatMessages" class="chat-container"></div>
           <div class="chat-input">
-            <input type="text" id="messageInput" placeholder="Votre message…">
-            <button id="sendMsgBtn">📤</button>
+            <input type="text" id="messageInput" placeholder="Votre message…" autocomplete="off">
+            <button id="sendMsgBtn" type="button" aria-label="Envoyer">→</button>
           </div>
-          <button id="closeChatBtn" class="secondary">Fermer</button>
+          <button id="closeChatBtn" class="secondary" type="button">Fermer</button>
         </div>
-      </div>
+      </section>
 
       <!-- TAB PROFIL -->
-      <div id="profileTab" class="hidden">
-        <input type="text" id="profileName"  placeholder="Nom d'utilisateur">
-        <textarea        id="profileBio"   placeholder="Parlez de vous…" rows="3"></textarea>
-        <input type="tel" id="profilePhone"  placeholder="Téléphone Orange Money">
-        <select           id="profileAvailability">
-          <option value="now">🟢 Disponible maintenant</option>
-          <option value="today">📅 Disponible aujourd'hui</option>
-          <option value="week">📆 Disponible cette semaine</option>
-        </select>
-        <button id="saveProfileBtn">💾 Enregistrer le profil</button>
-        <hr>
-        <h3>💰 Solde : <span id="balanceDisplay">0</span> FCFA</h3>
-        <button id="rechargeBtn" class="warning hidden">📱 Recharger</button>
-      </div>
+      <section id="profileTab" class="hidden">
+        <h2 class="section-title">Votre profil</h2>
+        <label class="field">
+          <span>Nom d'utilisateur</span>
+          <input type="text" id="profileName" placeholder="ex. Awa_22">
+        </label>
+        <label class="field">
+          <span>Bio</span>
+          <textarea id="profileBio" placeholder="Parlez de vous…" rows="3"></textarea>
+        </label>
+        <label class="field">
+          <span>Téléphone Orange Money</span>
+          <input type="tel" id="profilePhone" placeholder="+226…">
+        </label>
+        <label class="field">
+          <span>Disponibilité</span>
+          <select id="profileAvailability">
+            <option value="now">Disponible maintenant</option>
+            <option value="today">Disponible aujourd'hui</option>
+            <option value="week">Disponible cette semaine</option>
+          </select>
+        </label>
+        <button id="saveProfileBtn" type="button">Enregistrer le profil</button>
+        <div class="balance-panel">
+          <h3>Solde</h3>
+          <p class="balance-value"><span id="balanceDisplay">0</span> <small>FCFA</small></p>
+          <button id="rechargeBtn" class="warning hidden" type="button">Recharger</button>
+        </div>
+      </section>
 
       <!-- TAB ADMIN -->
-      <div id="adminTab" class="hidden">
-        <h3>Signalements en attente</h3>
+      <section id="adminTab" class="hidden">
+        <h2 class="section-title">Signalements</h2>
         <div id="reportsList" class="loading">Chargement</div>
-        <button id="refreshReportsBtn" class="secondary">⟳ Actualiser</button>
-        <hr>
-        <h3>Utilisateurs bannis</h3>
+        <button id="refreshReportsBtn" class="secondary" type="button">Actualiser</button>
+        <h2 class="section-title" style="margin-top:28px;">Utilisateurs bannis</h2>
         <div id="bannedList" class="loading">Chargement</div>
-      </div>
+      </section>
 
-    </div><!-- /tabs-card -->
-  </div><!-- /mainScreen -->
-</div><!-- /container -->
+    </main>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=3.3.0"></script>
+<script type="module" src="js/main.js?v=4.0.0"></script>
 </body>
 </html>

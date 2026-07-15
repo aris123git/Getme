@@ -6,7 +6,7 @@ import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages, u
 import { updateProfile, uploadAvatar, refreshBalance, loadProfileForm } from './profile.js';
 import { appState } from './state.js';
 
-const CACHE_VERSION = 'v3.3.0';
+const CACHE_VERSION = 'v4.0.0';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
@@ -70,7 +70,7 @@ function initProfileListeners() {
     const rechargeBtn = document.getElementById('rechargeBtn');
 
     if (saveBtn) {
-        saveBtn.onclick = withLoading(saveBtn, updateProfile, '⏳ Enregistrement…');
+        saveBtn.onclick = withLoading(saveBtn, updateProfile, 'Enregistrement…');
     }
     if (avatar) avatar.onclick = () => avatarInput?.click();
     if (avatarInput) {
@@ -82,7 +82,7 @@ function initProfileListeners() {
     if (rechargeBtn) {
         rechargeBtn.classList.remove('hidden');
         rechargeBtn.onclick = () => {
-            showNotification('📱 Envoyez un paiement Orange Money / Wave — le solde se mettra à jour automatiquement');
+            showNotification('Envoyez un paiement Orange Money / Wave — le solde se mettra à jour automatiquement');
         };
     }
 }
@@ -94,7 +94,7 @@ function initChatListeners() {
     const closeBtn = document.getElementById('closeChatBtn');
 
     if (sendBtn) {
-        sendBtn.onclick = withLoading(sendBtn, sendMessage, '⏳');
+        sendBtn.onclick = withLoading(sendBtn, sendMessage, '…');
     }
     if (msgInput) {
         msgInput.addEventListener('keydown', (e) => {
@@ -125,21 +125,28 @@ function initAdminListeners() {
 function initThemeToggle() {
     const btn = document.getElementById('themeToggleBtn');
     if (!btn) return;
-    const saved = localStorage.getItem('getme-theme') || 'dark';
-    if (saved === 'light') {
-        document.documentElement.setAttribute('data-theme', 'light');
-        btn.innerHTML = '☀️';
+    const saved = localStorage.getItem('getme-theme') || 'light';
+    if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        btn.innerHTML = '☀';
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#0d1618');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        btn.innerHTML = '◐';
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#e9eef2');
     }
     btn.onclick = () => {
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-        if (isLight) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
             document.documentElement.removeAttribute('data-theme');
-            btn.innerHTML = '🌙';
-            localStorage.setItem('getme-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-            btn.innerHTML = '☀️';
+            btn.innerHTML = '◐';
             localStorage.setItem('getme-theme', 'light');
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#e9eef2');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            btn.innerHTML = '☀';
+            localStorage.setItem('getme-theme', 'dark');
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#0d1618');
         }
     };
 }
@@ -157,7 +164,7 @@ function initClearCache() {
                 const keys = await caches.keys();
                 await Promise.all(keys.map(k => caches.delete(k)));
             }
-            showNotification('🔄 Cache vidé — rechargement…');
+            showNotification('Cache vidé — rechargement…');
             setTimeout(() => window.location.reload(), 600);
         } catch (err) {
             console.error(err);

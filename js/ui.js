@@ -21,7 +21,7 @@ export function setTabActive(tabName) {
 }
 
 // --- Loader sur bouton pendant une action async ---
-export function setButtonLoading(btn, isLoading, loadingText = '⏳ Patientez…') {
+export function setButtonLoading(btn, isLoading, loadingText = 'Patientez…') {
     if (!btn) return;
     if (isLoading) {
         btn.dataset.originalText = btn.innerHTML;
