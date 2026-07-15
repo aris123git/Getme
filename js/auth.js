@@ -99,6 +99,7 @@ export async function login(email, password) {
     }
 
     await setAuthBusy(true, 'login');
+    setAuthMsg('Connexion…');
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
             email: cleanEmail,
