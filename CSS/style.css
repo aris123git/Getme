@@ -413,12 +413,28 @@ button.chat-btn {
   cursor: pointer;
   transition: all 0.2s;
   letter-spacing: 0.1px;
+  position: relative;
 }
 .tab:hover { color: var(--text2); background: var(--bg3); }
 .tab.active {
   background: var(--rose-glow);
   color: var(--rose2);
   border: 1px solid rgba(232,81,106,0.2);
+}
+.tab-unread-badge {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 99px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 
 /* ─── TAB CONTENT ─── */

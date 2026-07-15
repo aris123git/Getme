@@ -2,11 +2,11 @@ import { supabase } from './supabaseClient.js';
 import { handleAuthChange, login, signUp, logout } from './auth.js';
 import { showNotification, setTabActive, withLoading } from './ui.js';
 import { startGeolocation, stopGeolocation, centerMapOnUser, loadNearbyUsers, debouncedLoadNearby } from './map.js';
-import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages } from './chat.js';
+import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages, unsubscribeFromMessages } from './chat.js';
 import { updateProfile, uploadAvatar, refreshBalance, loadProfileForm } from './profile.js';
 import { appState } from './state.js';
 
-const CACHE_VERSION = 'v3.2.0';
+const CACHE_VERSION = 'v3.3.0';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
@@ -193,18 +193,20 @@ async function syncUserState() {
     if (user) {
         await refreshBalance();
         subscribeToGlobalMessages(user.id, () => {
-            // Refresh conversations badge if on messages tab
             const messagesTab = document.getElementById('messagesTab');
-            if (messagesTab && !messagesTab.classList.contains('hidden')) {
+            const chatView = document.getElementById('chatView');
+            const chatOpen = chatView && !chatView.classList.contains('hidden');
+            if (messagesTab && !messagesTab.classList.contains('hidden') && !chatOpen) {
                 loadConversations();
             }
         });
-        // Show admin tab for designated admins (email-based for now)
         const adminEmails = ['admin@getme.app'];
         const adminBtn = document.getElementById('adminTabBtn');
         if (adminBtn && adminEmails.includes(user.email)) {
             adminBtn.style.display = '';
         }
+    } else {
+        await unsubscribeFromMessages();
     }
     return user;
 }
@@ -217,7 +219,21 @@ async function init() {
     }
     await registerServiceWorker();
     initEventListeners();
-    supabase.auth.onAuthStateChange(() => syncUserState());
+
+    // Refresh inbox when app comes back to foreground
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && appState.user) {
+            subscribeToGlobalMessages(appState.user.id);
+        }
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+        // Keep appState in sync with auth events
+        if (!session) {
+            appState.user = null;
+        }
+        syncUserState();
+    });
     await syncUserState();
 }
 init();

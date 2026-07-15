@@ -6,9 +6,216 @@ import { showNotification, setTabActive } from './ui.js';
 
 let currentChatChannel = null;
 let globalMessageChannel = null;
+let globalUserId = null;
+let onNewMessageCb = null;
+let chatPollTimer = null;
+let inboxPollTimer = null;
+let renderedMessageIds = new Set();
+let lastKnownUnread = 0;
+let lastNotifiedMessageId = null;
+let lastToastAt = 0;
+
+function toastNewMessage() {
+    const now = Date.now();
+    if (now - lastToastAt < 2500) return;
+    lastToastAt = now;
+    showNotification('📩 Nouveau message reçu');
+}
+
+function sameId(a, b) {
+    if (a == null || b == null) return false;
+    return String(a) === String(b);
+}
+
+function isChatOpen() {
+    const chatView = document.getElementById('chatView');
+    return !!(appState.currentChat && chatView && !chatView.classList.contains('hidden'));
+}
+
+function isMessagesTabVisible() {
+    const tab = document.getElementById('messagesTab');
+    return !!(tab && !tab.classList.contains('hidden'));
+}
+
+function updateMessagesTabBadge(count) {
+    const tab = document.querySelector('.tab[data-tab="messages"]');
+    if (!tab) return;
+    let badge = tab.querySelector('.tab-unread-badge');
+    if (count > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'tab-unread-badge';
+            tab.appendChild(badge);
+        }
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.classList.remove('hidden');
+    } else if (badge) {
+        badge.remove();
+    }
+}
+
+function appendMessageBubble(message, forceClass) {
+    const container = document.getElementById('chatMessages');
+    if (!container || !message) return false;
+
+    const id = message.id != null ? String(message.id) : null;
+    if (id && renderedMessageIds.has(id)) return false;
+    if (id) renderedMessageIds.add(id);
+
+    // Clear empty-state placeholder
+    if (container.querySelector(':scope > div[style*="text-align"]') && !container.querySelector('.message')) {
+        container.innerHTML = '';
+    }
+
+    const isMine = forceClass === 'sent'
+        || (forceClass !== 'received' && sameId(message.sender_id, appState.user?.id));
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${isMine ? 'sent' : 'received'}`;
+    if (id) msgDiv.dataset.msgId = id;
+    msgDiv.innerHTML = `${escapeHtml(message.message)}<small>${formatTime(message.created_at || new Date())}</small>`;
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+    return true;
+}
+
+function handleIncomingMessage(msg, { notify = true } = {}) {
+    if (!msg || !appState.user) return;
+    // Ignore own messages (already rendered optimistically)
+    if (sameId(msg.sender_id, appState.user.id)) return;
+
+    if (isChatOpen() && sameId(msg.sender_id, appState.currentChat)) {
+        const added = appendMessageBubble(msg, 'received');
+        if (added) {
+            api.markMessagesAsRead(appState.user.id, appState.currentChat).catch(() => {});
+        }
+        return;
+    }
+
+    // Not in that chat — notify + badge
+    if (notify && msg.id != null && String(msg.id) !== String(lastNotifiedMessageId)) {
+        lastNotifiedMessageId = msg.id;
+        toastNewMessage();
+    }
+    if (typeof onNewMessageCb === 'function') onNewMessageCb();
+    refreshUnreadBadge();
+    if (isMessagesTabVisible() && !isChatOpen()) {
+        loadConversations();
+    }
+}
+
+async function refreshUnreadBadge({ notifyOnIncrease = false } = {}) {
+    if (!appState.user) {
+        updateMessagesTabBadge(0);
+        return;
+    }
+    try {
+        const conversations = await api.getConversations(appState.user.id);
+        const total = (conversations || []).reduce((sum, c) => sum + (c.unread_count || 0), 0);
+        if (notifyOnIncrease && total > lastKnownUnread && total > 0 && !isChatOpen()) {
+            toastNewMessage();
+        }
+        lastKnownUnread = total;
+        updateMessagesTabBadge(total);
+    } catch (err) {
+        console.warn('refreshUnreadBadge:', err);
+    }
+}
+
+function stopChatPoll() {
+    if (chatPollTimer) {
+        clearInterval(chatPollTimer);
+        chatPollTimer = null;
+    }
+}
+
+function startChatPoll(otherUserId) {
+    stopChatPoll();
+    chatPollTimer = setInterval(() => pollOpenChat(otherUserId), 2500);
+}
+
+async function pollOpenChat(otherUserId) {
+    if (!appState.user || !sameId(appState.currentChat, otherUserId) || !isChatOpen()) return;
+    try {
+        const messages = await api.getMessages(appState.user.id, otherUserId);
+        let added = false;
+        for (const m of messages || []) {
+            if (m.id != null && renderedMessageIds.has(String(m.id))) continue;
+            if (sameId(m.sender_id, appState.user.id)) {
+                // Sync own message ids into the set without re-rendering
+                if (m.id != null) renderedMessageIds.add(String(m.id));
+                continue;
+            }
+            if (appendMessageBubble(m, 'received')) added = true;
+        }
+        if (added) {
+            await api.markMessagesAsRead(appState.user.id, otherUserId);
+            refreshUnreadBadge();
+        }
+    } catch (err) {
+        console.warn('pollOpenChat:', err);
+    }
+}
+
+function stopInboxPoll() {
+    if (inboxPollTimer) {
+        clearInterval(inboxPollTimer);
+        inboxPollTimer = null;
+    }
+}
+
+function startInboxPoll() {
+    stopInboxPoll();
+    inboxPollTimer = setInterval(() => {
+        if (!appState.user) return;
+        refreshUnreadBadge({ notifyOnIncrease: true });
+        if (isChatOpen() && appState.currentChat) {
+            pollOpenChat(appState.currentChat);
+        }
+    }, 5000);
+}
+
+async function removeChannelSafe(channel) {
+    if (!channel) return;
+    try {
+        await supabase.removeChannel(channel);
+    } catch (err) {
+        console.warn('removeChannel:', err);
+    }
+}
+
+export async function unsubscribeFromMessages() {
+    stopChatPoll();
+    stopInboxPoll();
+    await removeChannelSafe(currentChatChannel);
+    currentChatChannel = null;
+    await removeChannelSafe(globalMessageChannel);
+    globalMessageChannel = null;
+    globalUserId = null;
+    onNewMessageCb = null;
+    renderedMessageIds.clear();
+    lastKnownUnread = 0;
+    lastNotifiedMessageId = null;
+    updateMessagesTabBadge(0);
+}
 
 export function subscribeToGlobalMessages(userId, onNewMessage) {
-    if (globalMessageChannel || !userId) return;
+    if (!userId) return;
+
+    // Re-subscribe if user changed
+    if (globalMessageChannel && sameId(globalUserId, userId)) {
+        onNewMessageCb = onNewMessage || onNewMessageCb;
+        startInboxPoll();
+        refreshUnreadBadge();
+        return;
+    }
+
+    // Tear down previous
+    removeChannelSafe(globalMessageChannel);
+    globalMessageChannel = null;
+
+    globalUserId = userId;
+    onNewMessageCb = onNewMessage || null;
+
     globalMessageChannel = supabase
         .channel(`global-messages-${userId}`)
         .on('postgres_changes', {
@@ -17,12 +224,18 @@ export function subscribeToGlobalMessages(userId, onNewMessage) {
             table: 'messages',
             filter: `receiver_id=eq.${userId}`
         }, (payload) => {
-            if (payload.new.sender_id !== appState.currentChat) {
-                showNotification("📩 Nouveau message reçu");
-                if (onNewMessage) onNewMessage();
-            }
+            handleIncomingMessage(payload.new, { notify: true });
         })
-        .subscribe();
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('✅ Realtime messages connected');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                console.warn('⚠️ Realtime messages unavailable — using polling fallback', status);
+            }
+        });
+
+    startInboxPoll();
+    refreshUnreadBadge();
 }
 
 export async function loadConversations() {
@@ -39,6 +252,10 @@ export async function loadConversations() {
         if (container) container.innerHTML = '<div class="info-card">⚠️ Erreur réseau</div>';
         return;
     }
+
+    const total = (conversations || []).reduce((sum, c) => sum + (c.unread_count || 0), 0);
+    lastKnownUnread = total;
+    updateMessagesTabBadge(total);
 
     if (!conversations || conversations.length === 0) {
         if (container) container.innerHTML = '<div class="info-card">🔒 Débloquez quelqu\'un pour chatter</div>';
@@ -72,13 +289,13 @@ export async function startChat(userId, userName) {
         return;
     }
 
-    // Switch to messages tab so chat is visible
     setTabActive('messages');
 
-    if (currentChatChannel) {
-        await supabase.removeChannel(currentChatChannel);
-        currentChatChannel = null;
-    }
+    stopChatPoll();
+    await removeChannelSafe(currentChatChannel);
+    currentChatChannel = null;
+    renderedMessageIds.clear();
+
     setState('currentChat', userId);
     document.getElementById('chatWith').innerHTML = `💬 ${escapeHtml(userName)}`;
     document.getElementById('conversationsList').classList.add('hidden');
@@ -91,6 +308,7 @@ export async function startChat(userId, userName) {
     try {
         messages = await api.getMessages(appState.user.id, userId);
         await api.markMessagesAsRead(appState.user.id, userId);
+        refreshUnreadBadge();
     } catch (err) {
         console.error('startChat:', err);
         showNotification('Impossible de charger les messages', true);
@@ -98,33 +316,37 @@ export async function startChat(userId, userName) {
         return;
     }
 
-    container.innerHTML = messages?.length
-        ? messages.map(m => `
-            <div class="message ${m.sender_id === appState.user.id ? 'sent' : 'received'}">
-                ${escapeHtml(m.message)}
-                <small>${formatTime(m.created_at)}</small>
-            </div>
-        `).join('')
-        : '<div style="text-align:center;color:var(--text3);">Aucun message</div>';
+    container.innerHTML = '';
+    if (messages?.length) {
+        for (const m of messages) {
+            appendMessageBubble(m);
+        }
+    } else {
+        container.innerHTML = '<div style="text-align:center;color:var(--text3);">Aucun message</div>';
+    }
     container.scrollTop = container.scrollHeight;
 
+    // Realtime for this conversation (incoming only)
     currentChatChannel = supabase
-        .channel(`chat-${userId}`)
+        .channel(`chat-${appState.user.id}-${userId}`)
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
             table: 'messages',
             filter: `receiver_id=eq.${appState.user.id}`
         }, (payload) => {
-            if (payload.new.sender_id === userId) {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'message received';
-                msgDiv.innerHTML = `${escapeHtml(payload.new.message)}<small>${formatTime(new Date())}</small>`;
-                container.appendChild(msgDiv);
-                container.scrollTop = container.scrollHeight;
+            if (sameId(payload.new?.sender_id, userId)) {
+                handleIncomingMessage(payload.new, { notify: false });
             }
         })
-        .subscribe();
+        .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                console.warn('⚠️ Chat realtime down — polling active', status);
+            }
+        });
+
+    // Always poll as reliable fallback (works even if Realtime publication is off)
+    startChatPoll(userId);
 }
 
 export async function sendMessage() {
@@ -132,8 +354,9 @@ export async function sendMessage() {
     const msg = input?.value.trim();
     if (!msg || !appState.currentChat || !appState.user) return;
 
+    let inserted;
     try {
-        await api.sendMessage(appState.user.id, appState.currentChat, msg);
+        inserted = await api.sendMessage(appState.user.id, appState.currentChat, msg);
     } catch (err) {
         console.error('sendMessage:', err);
         showNotification('Échec de l\'envoi', true);
@@ -141,19 +364,28 @@ export async function sendMessage() {
     }
 
     input.value = '';
-    const container = document.getElementById('chatMessages');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'message sent';
-    msgDiv.innerHTML = `${escapeHtml(msg)}<small>Maintenant</small>`;
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
+    const row = Array.isArray(inserted) ? inserted[0] : inserted;
+    if (row) {
+        appendMessageBubble({
+            id: row.id,
+            sender_id: appState.user.id,
+            message: row.message || msg,
+            created_at: row.created_at || new Date().toISOString()
+        }, 'sent');
+    } else {
+        appendMessageBubble({
+            sender_id: appState.user.id,
+            message: msg,
+            created_at: new Date().toISOString()
+        }, 'sent');
+    }
 }
 
 export function closeChat() {
-    if (currentChatChannel) {
-        supabase.removeChannel(currentChatChannel);
-        currentChatChannel = null;
-    }
+    stopChatPoll();
+    removeChannelSafe(currentChatChannel);
+    currentChatChannel = null;
+    renderedMessageIds.clear();
     setState('currentChat', null);
     document.getElementById('conversationsList').classList.remove('hidden');
     document.getElementById('chatView').classList.add('hidden');
