@@ -34,15 +34,15 @@
         <div id="authMsg"></div>
         <label class="field">
           <span>Email</span>
-          <input type="email" id="email" placeholder="vous@email.com" autocomplete="email">
+          <input type="email" id="email" placeholder="vous@email.com" autocomplete="email" required>
         </label>
         <label class="field">
           <span>Mot de passe</span>
-          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required minlength="6">
         </label>
         <div class="auth-actions">
-          <button type="button" id="signupBtn">Créer un compte</button>
-          <button type="button" id="loginBtn" class="secondary">Se connecter</button>
+          <button type="submit" id="loginBtn">Se connecter</button>
+          <button type="button" id="signupBtn" class="secondary">Créer un compte</button>
         </div>
       </form>
     </div>
@@ -155,6 +155,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.0.0"></script>
+<script type="module" src="js/main.js?v=4.0.1"></script>
 </body>
 </html>

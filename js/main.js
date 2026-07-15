@@ -6,21 +6,37 @@ import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages, u
 import { updateProfile, uploadAvatar, refreshBalance, loadProfileForm } from './profile.js';
 import { appState } from './state.js';
 
-const CACHE_VERSION = 'v4.0.0';
+const CACHE_VERSION = 'v4.0.1';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
-    document.getElementById('signupBtn').onclick = () => {
-        const email = document.getElementById('email').value;
-        const pwd = document.getElementById('password').value;
+    const form = document.getElementById('authForm');
+    const signupBtn = document.getElementById('signupBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const doLogin = () => {
+        const email = document.getElementById('email')?.value || '';
+        const pwd = document.getElementById('password')?.value || '';
+        return login(email, pwd);
+    };
+
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            doLogin();
+        });
+    }
+    if (loginBtn) loginBtn.onclick = (e) => {
+        e.preventDefault();
+        doLogin();
+    };
+    if (signupBtn) signupBtn.onclick = () => {
+        const email = document.getElementById('email')?.value || '';
+        const pwd = document.getElementById('password')?.value || '';
         signUp(email, pwd);
     };
-    document.getElementById('loginBtn').onclick = () => {
-        const email = document.getElementById('email').value;
-        const pwd = document.getElementById('password').value;
-        login(email, pwd);
-    };
-    document.getElementById('logoutBtn').onclick = logout;
+    if (logoutBtn) logoutBtn.onclick = logout;
 }
 
 // ── TAB LISTENERS ──
@@ -195,52 +211,75 @@ function initEventListeners() {
 }
 
 async function syncUserState() {
-    const user = await handleAuthChange();
-    appState.user = user;
-    if (user) {
-        await refreshBalance();
-        subscribeToGlobalMessages(user.id, () => {
-            const messagesTab = document.getElementById('messagesTab');
-            const chatView = document.getElementById('chatView');
-            const chatOpen = chatView && !chatView.classList.contains('hidden');
-            if (messagesTab && !messagesTab.classList.contains('hidden') && !chatOpen) {
-                loadConversations();
+    try {
+        const user = await handleAuthChange();
+        appState.user = user;
+        if (user) {
+            try {
+                await refreshBalance();
+            } catch (err) {
+                console.warn('refreshBalance after login:', err);
             }
-        });
-        const adminEmails = ['admin@getme.app'];
-        const adminBtn = document.getElementById('adminTabBtn');
-        if (adminBtn && adminEmails.includes(user.email)) {
-            adminBtn.style.display = '';
+            try {
+                subscribeToGlobalMessages(user.id, () => {
+                    const messagesTab = document.getElementById('messagesTab');
+                    const chatView = document.getElementById('chatView');
+                    const chatOpen = chatView && !chatView.classList.contains('hidden');
+                    if (messagesTab && !messagesTab.classList.contains('hidden') && !chatOpen) {
+                        loadConversations();
+                    }
+                });
+            } catch (err) {
+                console.warn('subscribeToGlobalMessages:', err);
+            }
+            const adminEmails = ['admin@getme.app'];
+            const adminBtn = document.getElementById('adminTabBtn');
+            if (adminBtn && adminEmails.includes(user.email)) {
+                adminBtn.style.display = '';
+            }
+        } else {
+            try {
+                await unsubscribeFromMessages();
+            } catch (err) {
+                console.warn('unsubscribeFromMessages:', err);
+            }
         }
-    } else {
-        await unsubscribeFromMessages();
+        return user;
+    } catch (err) {
+        console.error('syncUserState:', err);
+        return null;
     }
-    return user;
 }
 
 async function init() {
+    // Avoid infinite reload loops when a new SW takes control
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (sessionStorage.getItem('getme-sw-reloaded')) return;
+            sessionStorage.setItem('getme-sw-reloaded', '1');
             window.location.reload();
         });
     }
-    await registerServiceWorker();
+
     initEventListeners();
 
-    // Refresh inbox when app comes back to foreground
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && appState.user) {
             subscribeToGlobalMessages(appState.user.id);
         }
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-        // Keep appState in sync with auth events
-        if (!session) {
+    // Auth listener first, then hydrate session (don't block UI on SW)
+    supabase.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') {
             appState.user = null;
         }
+        // Skip noisy token refresh full resyncs that can flicker the UI
+        if (event === 'TOKEN_REFRESHED') return;
         syncUserState();
     });
+
     await syncUserState();
+    registerServiceWorker();
 }
 init();
