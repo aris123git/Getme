@@ -473,20 +473,19 @@ button.chat-btn {
   background: var(--bg2);
 }
 
-/* Carte only — hidden on Messages / Profil / Admin */
+/* Only inside #mapTab — never sticky/fixed, never over tabs */
 .desire-line {
-  display: none;
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--text2);
-  margin: 0;
-  padding: 0 0 10px;
+  color: var(--text1);
+  margin: 0 0 10px;
+  padding: 0;
   line-height: 1.25;
-}
-#mainScreen[data-tab="map"] .desire-line {
-  display: block;
+  position: static;
+  z-index: auto;
+  pointer-events: none;
 }
 
 .header-content {
@@ -566,16 +565,13 @@ button.chat-btn {
 .tabs {
   display: flex;
   gap: 4px;
-  padding: 8px 0 6px;
+  padding: 8px 0 10px;
   margin: 8px -4px 0;
   background: var(--bg2);
   position: relative;
-  z-index: auto;
+  z-index: 2;
   top: auto;
   border-bottom: none;
-}
-#mainScreen[data-tab="map"] .tabs {
-  padding-bottom: 4px;
 }
 [data-theme="light"] .tabs {
   background: var(--bg2);
@@ -620,6 +616,9 @@ button.chat-btn {
 #mapTab, #messagesTab, #profileTab, #adminTab {
   padding: 16px 14px 48px;
   animation: tabIn 0.28s ease both;
+}
+#mapTab {
+  padding-top: 10px; /* keep desire line high under the tabs */
 }
 
 @keyframes tabIn {

@@ -85,13 +85,13 @@
         <div class="tab" data-tab="profile">Profil</div>
         <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">Admin</div>
       </nav>
-      <p class="desire-line">Qui a envie, près de vous, maintenant.</p>
     </header>
 
     <main class="app-main">
 
-      <!-- TAB CARTE -->
+      <!-- TAB CARTE — desire line lives here only so it cannot cover Messages/Profil -->
       <section id="mapTab">
+        <p class="desire-line">Qui a envie, près de vous, maintenant.</p>
         <div id="gpsStatus" class="info-card">Activez votre position pour commencer</div>
         <div class="button-group">
           <button id="enableGpsBtn" type="button">Activer GPS</button>
@@ -170,6 +170,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.2.8"></script>
+<script type="module" src="js/main.js?v=4.2.9"></script>
 </body>
 </html>
