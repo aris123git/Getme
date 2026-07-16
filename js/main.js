@@ -5,8 +5,10 @@ import { startGeolocation, stopGeolocation, centerMapOnUser, loadNearbyUsers, de
 import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages, unsubscribeFromMessages } from './chat.js';
 import { updateProfile, uploadAvatar, refreshBalance, loadProfileForm } from './profile.js';
 import { appState } from './state.js';
+import { initPushForUser, registerPushSubscription, ensureNotificationPermission } from './push.js';
+import { initCallListeners, stopCallListeners } from './call.js';
 
-const CACHE_VERSION = 'v4.0.1';
+const CACHE_VERSION = 'v4.1.0';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
@@ -99,6 +101,21 @@ function initProfileListeners() {
         rechargeBtn.classList.remove('hidden');
         rechargeBtn.onclick = () => {
             showNotification('Envoyez un paiement Orange Money / Wave — le solde se mettra à jour automatiquement');
+        };
+    }
+    const pushBtn = document.getElementById('enablePushBtn');
+    if (pushBtn) {
+        pushBtn.onclick = async () => {
+            if (!appState.user) return;
+            const perm = await ensureNotificationPermission();
+            if (perm !== 'granted') {
+                showNotification('Permission refusée — activez-la dans les réglages du navigateur', true);
+                return;
+            }
+            const ok = await registerPushSubscription(appState.user.id);
+            showNotification(ok
+                ? 'Notifications activées pour appels et messages'
+                : 'Permission OK — configurez aussi VAPID / tables SQL pour le push distant');
         };
     }
 }
@@ -232,6 +249,12 @@ async function syncUserState() {
             } catch (err) {
                 console.warn('subscribeToGlobalMessages:', err);
             }
+            try {
+                initCallListeners(user.id);
+                initPushForUser(user.id);
+            } catch (err) {
+                console.warn('call/push init:', err);
+            }
             const adminEmails = ['admin@getme.app'];
             const adminBtn = document.getElementById('adminTabBtn');
             if (adminBtn && adminEmails.includes(user.email)) {
@@ -239,6 +262,7 @@ async function syncUserState() {
             }
         } else {
             try {
+                await stopCallListeners();
                 await unsubscribeFromMessages();
             } catch (err) {
                 console.warn('unsubscribeFromMessages:', err);

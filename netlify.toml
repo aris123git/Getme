@@ -5,6 +5,16 @@
   NODE_VERSION = "18"
 
 [[redirects]]
-  from = "/api/*"
+  from = "/api/sms"
   to = "/.netlify/functions/sms-webhook"
+  status = 200
+
+[[redirects]]
+  from = "/api/create-call-room"
+  to = "/.netlify/functions/create-call-room"
+  status = 200
+
+[[redirects]]
+  from = "/api/send-push"
+  to = "/.netlify/functions/send-push"
   status = 200

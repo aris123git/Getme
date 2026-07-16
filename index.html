@@ -100,7 +100,10 @@
       <section id="messagesTab" class="hidden">
         <div id="conversationsList" class="loading">Chargement</div>
         <div id="chatView" class="hidden">
-          <div id="chatWith"></div>
+          <div class="chat-header-row">
+            <div id="chatWith"></div>
+            <button type="button" id="startCallBtn" class="small secondary hidden" title="Appel vidéo">Appel</button>
+          </div>
           <div id="chatMessages" class="chat-container"></div>
           <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Votre message…" autocomplete="off">
@@ -134,6 +137,7 @@
           </select>
         </label>
         <button id="saveProfileBtn" type="button">Enregistrer le profil</button>
+        <button id="enablePushBtn" type="button" class="secondary">Activer les notifications</button>
         <div class="balance-panel">
           <h3>Solde</h3>
           <p class="balance-value"><span id="balanceDisplay">0</span> <small>FCFA</small></p>
@@ -155,6 +159,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.0.1"></script>
+<script type="module" src="js/main.js?v=4.1.0"></script>
 </body>
 </html>

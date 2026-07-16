@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4.0.1';
+const CACHE_VERSION = 'v4.1.0';
 const CACHE_NAME = `getme-${CACHE_VERSION}`;
 
 const urlsToCache = [
@@ -16,12 +16,13 @@ const urlsToCache = [
     '/js/profile.js',
     '/js/ui.js',
     '/js/supabaseClient.js',
+    '/js/push.js',
+    '/js/call.js',
     '/manifest.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png'
 ];
 
-// ── INSTALL ──
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -30,7 +31,6 @@ self.addEventListener('install', event => {
     );
 });
 
-// ── ACTIVATE ──
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys()
@@ -41,28 +41,22 @@ self.addEventListener('activate', event => {
     );
 });
 
-// ── FETCH ──
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // ✅ Jamais intercepter les POST
     if (event.request.method !== 'GET') return;
 
-    // ✅ Ignorer les requêtes "only-if-cached" cross-origin
     if (event.request.cache === 'only-if-cached' &&
         event.request.mode !== 'same-origin') return;
 
-    // ✅ Jamais intercepter Supabase
     if (url.hostname.includes('supabase.co') ||
-        url.hostname.includes('supabase.in')) return;
+        url.hostname.includes('supabase.in') ||
+        url.hostname.includes('daily.co')) return;
 
-    // ✅ Jamais intercepter les requêtes avec Authorization (données authentifiées)
     if (event.request.headers.get('Authorization')) return;
 
-    // ✅ Jamais intercepter les requêtes externes
     if (url.origin !== self.location.origin) return;
 
-    // HTML → Network First + fallback offline
     if (url.pathname === '/' || url.pathname === '/index.html') {
         event.respondWith(
             fetch(event.request, { cache: 'no-cache' })
@@ -77,7 +71,6 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // JS + CSS → Stale While Revalidate (cache immédiat + mise à jour en arrière-plan)
     if (url.pathname.startsWith('/js/') || url.pathname.startsWith('/CSS/')) {
         event.respondWith(
             caches.match(event.request).then(cached => {
@@ -89,14 +82,12 @@ self.addEventListener('fetch', event => {
                         return response;
                     })
                     .catch(() => cached);
-                // Retourne le cache immédiatement ET met à jour en arrière-plan
                 return cached || networkFetch;
             })
         );
         return;
     }
 
-    // Images + icônes + manifest → Cache First
     event.respondWith(
         caches.match(event.request).then(response => {
             if (response) return response;
@@ -112,7 +103,6 @@ self.addEventListener('fetch', event => {
     );
 });
 
-// ── MESSAGE HANDLER ──
 self.addEventListener('message', event => {
     if (event.data === 'clearCache') {
         event.waitUntil(
@@ -121,4 +111,51 @@ self.addEventListener('message', event => {
             )
         );
     }
+});
+
+// ── WEB PUSH (calls + messages) ──
+self.addEventListener('push', event => {
+    let payload = {
+        title: 'Getme',
+        body: 'Nouvelle notification',
+        url: '/',
+        tag: 'getme'
+    };
+    try {
+        if (event.data) {
+            payload = { ...payload, ...event.data.json() };
+        }
+    } catch (_) {
+        try {
+            payload.body = event.data.text();
+        } catch (__) {}
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title || 'Getme', {
+            body: payload.body || payload.message || '',
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            tag: payload.tag || 'getme',
+            data: { url: payload.url || '/', ...(payload.data || {}) },
+            renotify: true,
+            vibrate: payload.tag === 'getme-call' ? [200, 100, 200, 100, 200] : [100, 50, 100]
+        })
+    );
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+            for (const client of list) {
+                if ('focus' in client) {
+                    client.navigate(targetUrl);
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) return clients.openWindow(targetUrl);
+        })
+    );
 });

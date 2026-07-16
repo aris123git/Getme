@@ -3,6 +3,8 @@ import { appState, setState } from './state.js';
 import { api } from './api.js';
 import { escapeHtml, formatTime } from './utils.js';
 import { showNotification, setTabActive } from './ui.js';
+import { bindCallButton } from './call.js';
+import { notifyUserPush, showLocalNotification } from './push.js';
 
 let currentChatChannel = null;
 let globalMessageChannel = null;
@@ -95,6 +97,11 @@ function handleIncomingMessage(msg, { notify = true } = {}) {
     if (notify && msg.id != null && String(msg.id) !== String(lastNotifiedMessageId)) {
         lastNotifiedMessageId = msg.id;
         toastNewMessage();
+        showLocalNotification('Nouveau message', {
+            body: 'Vous avez reçu un message sur Getme',
+            tag: 'getme-message',
+            data: { type: 'message' }
+        });
     }
     if (typeof onNewMessageCb === 'function') onNewMessageCb();
     refreshUnreadBadge();
@@ -302,6 +309,7 @@ export async function startChat(userId, userName) {
     document.getElementById('chatWith').innerHTML = escapeHtml(userName);
     document.getElementById('conversationsList').classList.add('hidden');
     document.getElementById('chatView').classList.remove('hidden');
+    bindCallButton(userId, userName);
 
     const container = document.getElementById('chatMessages');
     container.innerHTML = '<div class="loading">Chargement</div>';
@@ -381,6 +389,15 @@ export async function sendMessage() {
             created_at: new Date().toISOString()
         }, 'sent');
     }
+
+    // Push notification to the other person (works when app is closed if configured)
+    notifyUserPush(appState.currentChat, {
+        title: 'Nouveau message',
+        message: msg.slice(0, 80),
+        url: '/?tab=messages',
+        tag: 'getme-message',
+        data: { type: 'message', from: appState.user.id }
+    });
 }
 
 export function closeChat() {
@@ -391,5 +408,7 @@ export function closeChat() {
     setState('currentChat', null);
     document.getElementById('conversationsList').classList.remove('hidden');
     document.getElementById('chatView').classList.add('hidden');
+    const callBtn = document.getElementById('startCallBtn');
+    if (callBtn) callBtn.classList.add('hidden');
     loadConversations();
 }

@@ -831,6 +831,115 @@ select option { background: var(--bg2); color: var(--text1); }
 .confirm-actions { display: flex; gap: 10px; }
 .confirm-actions button { flex: 1; }
 
+/* ─── CHAT HEADER + CALL UI ─── */
+.chat-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+.chat-header-row #chatWith {
+  border: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+#startCallBtn {
+  flex: none;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(11, 122, 106, 0.3);
+}
+
+.call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(16, 42, 45, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+.call-panel {
+  width: min(420px, 100%);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 22px 18px;
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+.call-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.call-peer {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text1);
+}
+.call-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.call-actions button { flex: 1; }
+
+.call-videos {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 420px;
+  background: #0d1618;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+#remoteVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #102a2d;
+}
+#localVideo {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 28%;
+  max-width: 120px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.7);
+  background: #1a2c30;
+}
+.daily-frame-wrap {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 480px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  background: #0d1618;
+}
+.daily-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* Leaflet popup polish */
 .leaflet-popup-content-wrapper {
   border-radius: 14px !important;
