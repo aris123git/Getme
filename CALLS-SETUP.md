@@ -20,25 +20,35 @@ Dans le SQL Editor Supabase, exécutez le fichier :
 
 Cela crée `calls`, `push_subscriptions`, RLS et Realtime.
 
-## 2) Notifications push (Netlify env)
+## 2) Notifications push (Netlify env — ne jamais committer les secrets)
 
-Clés déjà générées pour ce projet :
+Dans **Netlify → Site settings → Environment variables**, ajoutez :
 
-| Variable Netlify | Valeur |
+| Variable | Où la trouver |
 |---|---|
-| `VAPID_PUBLIC_KEY` | `BH6Wak_No7bHeOwCwAYqKjmxA8RMgWYqXiYlXFcGFBq5OHX3Njjm2t5UqHAkYGgXFEYzGyoa5CYW4b5g4d9eU1c` |
-| `VAPID_PRIVATE_KEY` | `rhRlOTcfsdMT-VZztEKXZR4EBDFOzzFg6prLMfc20YQ` |
-| `VAPID_SUBJECT` | `mailto:votre@email.com` |
-| `SUPABASE_URL` | `https://nuijvjnufnaodwtrhjuq.supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | *(clé service role Supabase — secrète)* |
+| `VAPID_PUBLIC_KEY` | Même valeur que `VAPID_PUBLIC_KEY` dans `js/config.js` |
+| `VAPID_PRIVATE_KEY` | Générer avec `npx web-push generate-vapid-keys` (ne pas mettre dans Git) |
+| `VAPID_SUBJECT` | ex. `mailto:votre@email.com` |
+| `SUPABASE_URL` | URL du projet Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clé **service_role** Supabase (Dashboard → Settings → API) |
+
+> Si vous régénérez les clés VAPID, mettez à jour **à la fois** `js/config.js` (public) et la variable Netlify `VAPID_PRIVATE_KEY` (privée).
 
 Puis dans l’app : **Profil → Activer les notifications**.
+
+### Générer des clés VAPID localement
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Copiez la **public key** dans `js/config.js` et la **private key** uniquement dans Netlify.
 
 ## 3) Daily.co (optionnel mais recommandé)
 
 1. Créez un compte sur [daily.co](https://www.daily.co/)
 2. Copiez l’API key
-3. Ajoutez sur Netlify : `DAILY_API_KEY=...`
+3. Ajoutez sur Netlify : `DAILY_API_KEY` (jamais dans le code)
 4. Redéployez
 
 Sans Daily, les appels 1–1 marchent déjà en WebRTC.

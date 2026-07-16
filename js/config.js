@@ -7,7 +7,7 @@ export const GPS_OPTIONS = {
     timeout: 10000
 };
 
-/** Web Push public VAPID key (safe in client). Private key = Netlify env VAPID_PRIVATE_KEY */
-export const VAPID_PUBLIC_KEY = 'BH6Wak_No7bHeOwCwAYqKjmxA8RMgWYqXiYlXFcGFBq5OHX3Njjm2t5UqHAkYGgXFEYzGyoa5CYW4b5g4d9eU1c';
+/** Web Push public VAPID key (safe in client). Private key = Netlify env VAPID_PRIVATE_KEY only */
+export const VAPID_PUBLIC_KEY = 'BP4VXAHCQ0pXndzi5bkyY8pMTtTR423d1yt8FPSRA2Dh5N2WJElooSf0-33j6Jn7pPsw49HjLy7dxjgULeN-_bk';
 
 export const CALL_RING_TIMEOUT_MS = 45000;
