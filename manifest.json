@@ -3,9 +3,9 @@
     "short_name": "Getme",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#e9eef2",
-    "theme_color": "#0b7a6a",
-    "description": "Rencontrez des âmes proches de vous",
+    "background_color": "#140c10",
+    "theme_color": "#c43b5a",
+    "description": "Rencontres sexuelles de proximité — adultes 18+ uniquement",
     "icons": [
         {
             "src": "icons/icon-192.png",

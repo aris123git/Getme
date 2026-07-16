@@ -8,7 +8,7 @@ import { appState } from './state.js';
 import { initPushForUser, registerPushSubscription, ensureNotificationPermission } from './push.js';
 import { initCallListeners, stopCallListeners } from './call.js';
 
-const CACHE_VERSION = 'v4.1.1';
+const CACHE_VERSION = 'v4.2.0';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
@@ -158,28 +158,28 @@ function initAdminListeners() {
 function initThemeToggle() {
     const btn = document.getElementById('themeToggleBtn');
     if (!btn) return;
-    const saved = localStorage.getItem('getme-theme') || 'light';
-    if (saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        btn.innerHTML = '☀';
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#0d1618');
+    const saved = localStorage.getItem('getme-theme') || 'dark';
+    if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        btn.innerHTML = '◐';
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f6eef1');
     } else {
         document.documentElement.removeAttribute('data-theme');
-        btn.innerHTML = '◐';
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#e9eef2');
+        btn.innerHTML = '☀';
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#140c10');
     }
     btn.onclick = () => {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        if (isDark) {
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        if (isLight) {
             document.documentElement.removeAttribute('data-theme');
-            btn.innerHTML = '◐';
-            localStorage.setItem('getme-theme', 'light');
-            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#e9eef2');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'dark');
             btn.innerHTML = '☀';
             localStorage.setItem('getme-theme', 'dark');
-            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#0d1618');
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#140c10');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            btn.innerHTML = '◐';
+            localStorage.setItem('getme-theme', 'light');
+            document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f6eef1');
         }
     };
 }

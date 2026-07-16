@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <meta name="theme-color" content="#e9eef2">
-  <meta name="description" content="Getme – Rencontrez des âmes proches de vous">
+  <meta name="theme-color" content="#140c10">
+  <meta name="description" content="Getme — Rencontres sexuelles de proximité. Adultes 18+ uniquement.">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="rating" content="adult">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <title>Getme – Rencontres de proximité</title>
+  <title>Getme — Désir à proximité · 18+</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
@@ -23,11 +24,13 @@
     <div class="auth-atmosphere" aria-hidden="true"></div>
     <div class="auth-stage">
       <div class="auth-brand">
+        <p class="auth-badge">18+ · Adultes uniquement</p>
         <div class="logo-mark" aria-hidden="true">
           <span class="logo-dot"></span>
         </div>
         <h1>Getme</h1>
-        <p class="auth-tagline">Rencontrez des âmes proches de vous</p>
+        <p class="auth-tagline">Le désir près de vous.<br>Direct. Discret. Sans détour.</p>
+        <p class="auth-sub">Rencontres sexuelles de proximité entre adultes consentants.</p>
       </div>
 
       <form class="auth-form" id="authForm" onsubmit="return false;">
@@ -40,10 +43,15 @@
           <span>Mot de passe</span>
           <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required minlength="6">
         </label>
+        <label class="age-gate" for="ageConfirm">
+          <input type="checkbox" id="ageConfirm">
+          <span>J’ai <strong>18 ans ou plus</strong> et je cherche uniquement des rencontres sexuelles consensuelles entre adultes.</span>
+        </label>
         <div class="auth-actions">
-          <button type="submit" id="loginBtn">Se connecter</button>
+          <button type="submit" id="loginBtn">Entrer</button>
           <button type="button" id="signupBtn" class="secondary">Créer un compte</button>
         </div>
+        <p class="auth-legal">Pas de mineurs. Pas de harcèlement. Consentement obligatoire.</p>
       </form>
     </div>
   </div>
@@ -159,6 +167,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.1.1"></script>
+<script type="module" src="js/main.js?v=4.2.0"></script>
 </body>
 </html>

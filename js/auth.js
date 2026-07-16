@@ -36,7 +36,7 @@ async function setAuthBusy(busy, mode = 'login') {
         if (!btn.dataset.originalText) btn.dataset.originalText = btn.innerHTML;
     });
     if (!busy) {
-        if (loginBtn) loginBtn.innerHTML = loginBtn.dataset.originalText || 'Se connecter';
+        if (loginBtn) loginBtn.innerHTML = loginBtn.dataset.originalText || 'Entrer';
         if (signupBtn) signupBtn.innerHTML = signupBtn.dataset.originalText || 'Créer un compte';
         return;
     }
@@ -44,7 +44,18 @@ async function setAuthBusy(busy, mode = 'login') {
     if (mode === 'login' && loginBtn) loginBtn.innerHTML = 'Connexion…';
 }
 
+function requireAdultConfirm() {
+    const box = document.getElementById('ageConfirm');
+    if (!box?.checked) {
+        setAuthMsg('Confirmez que vous avez 18 ans ou plus pour continuer.', true);
+        showNotification('Réservé aux adultes 18+', true);
+        return false;
+    }
+    return true;
+}
+
 export async function signUp(email, password) {
+    if (!requireAdultConfirm()) return false;
     const cleanEmail = (email || '').trim();
     if (!cleanEmail || !password) {
         setAuthMsg('Email et mot de passe requis', true);
@@ -91,6 +102,7 @@ export async function signUp(email, password) {
 }
 
 export async function login(email, password) {
+    if (!requireAdultConfirm()) return false;
     const cleanEmail = (email || '').trim();
     if (!cleanEmail || !password) {
         setAuthMsg('Email et mot de passe requis', true);

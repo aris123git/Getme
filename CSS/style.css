@@ -1,56 +1,56 @@
 /* ═══════════════════════════════════════════
-   Getme — Horizon redesign
-   Light-first · Syne + Outfit · teal accent
+   Getme — After Dark (adultes 18+)
+   Dark wine · Syne + Outfit · desire-forward
 ═══════════════════════════════════════════ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #e9eef2;
-  --bg2:       #f7f9fb;
-  --bg3:       #dfe7ee;
-  --ink:       #102a2d;
-  --text1:     #102a2d;
-  --text2:     #4a6066;
-  --text3:     #7a9198;
-  --accent:    #0b7a6a;
-  --accent2:   #0e9582;
-  --accent-soft: rgba(11, 122, 106, 0.12);
-  --ember:     #e07a3d;
-  --ember-soft: rgba(224, 122, 61, 0.14);
-  --success:   #1a9b6c;
-  --danger:    #c94444;
-  --border:    rgba(16, 42, 45, 0.08);
-  --border2:   rgba(16, 42, 45, 0.14);
-  --surface:   rgba(247, 249, 251, 0.82);
+  --bg:        #140c10;
+  --bg2:       #1c1218;
+  --bg3:       #2a1a22;
+  --ink:       #f7ebe8;
+  --text1:     #f7ebe8;
+  --text2:     #c4a8b0;
+  --text3:     #7d5f68;
+  --accent:    #c43b5a;
+  --accent2:   #e25574;
+  --accent-soft: rgba(196, 59, 90, 0.18);
+  --ember:     #e8b86d;
+  --ember-soft: rgba(232, 184, 109, 0.16);
+  --success:   #3dba8a;
+  --danger:    #e85d5d;
+  --border:    rgba(247, 235, 232, 0.08);
+  --border2:   rgba(247, 235, 232, 0.14);
+  --surface:   rgba(28, 18, 24, 0.88);
   --r-lg:      18px;
   --r-md:      12px;
   --r-sm:      8px;
   --font-display: 'Syne', sans-serif;
   --font-body: 'Outfit', sans-serif;
-  --shadow-soft: 0 18px 40px rgba(16, 42, 45, 0.08);
+  --shadow-soft: 0 22px 50px rgba(0, 0, 0, 0.45);
 }
 
-/* Dark theme (toggle) */
-[data-theme="dark"] {
-  --bg:        #0d1618;
-  --bg2:       #132022;
-  --bg3:       #1a2c30;
-  --ink:       #e8f1f2;
-  --text1:     #e8f1f2;
-  --text2:     #9bb0b5;
-  --text3:     #5f757a;
-  --accent:    #2ec4a4;
-  --accent2:   #3dd9b6;
-  --accent-soft: rgba(46, 196, 164, 0.16);
-  --ember:     #f0a060;
-  --ember-soft: rgba(240, 160, 96, 0.16);
-  --success:   #34d399;
-  --danger:    #f07171;
-  --border:    rgba(232, 241, 242, 0.08);
-  --border2:   rgba(232, 241, 242, 0.14);
-  --surface:   rgba(19, 32, 34, 0.88);
-  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.35);
+/* Light theme (toggle) */
+[data-theme="light"] {
+  --bg:        #f6eef1;
+  --bg2:       #fffafb;
+  --bg3:       #efe2e6;
+  --ink:       #1a0f14;
+  --text1:     #1a0f14;
+  --text2:     #5c3d48;
+  --text3:     #9a7a84;
+  --accent:    #b0123a;
+  --accent2:   #d01f4c;
+  --accent-soft: rgba(176, 18, 58, 0.1);
+  --ember:     #b8860b;
+  --ember-soft: rgba(184, 134, 11, 0.12);
+  --success:   #1a9b6c;
+  --danger:    #c94444;
+  --border:    rgba(26, 15, 20, 0.08);
+  --border2:   rgba(26, 15, 20, 0.14);
+  --surface:   rgba(255, 250, 251, 0.9);
+  --shadow-soft: 0 18px 40px rgba(26, 15, 20, 0.1);
 }
 
 html, body {
@@ -66,16 +66,17 @@ html, body {
 
 body {
   background:
-    radial-gradient(ellipse 90% 55% at 10% -10%, rgba(11, 122, 106, 0.14), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(224, 122, 61, 0.10), transparent 50%),
+    radial-gradient(ellipse 100% 70% at 50% -10%, rgba(196, 59, 90, 0.28), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 80%, rgba(232, 184, 109, 0.08), transparent 50%),
+    radial-gradient(ellipse 50% 35% at 0% 60%, rgba(196, 59, 90, 0.12), transparent 45%),
     var(--bg);
   background-attachment: fixed;
 }
 
-[data-theme="dark"] body {
+[data-theme="light"] body {
   background:
-    radial-gradient(ellipse 90% 55% at 10% -10%, rgba(46, 196, 164, 0.12), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(240, 160, 96, 0.08), transparent 50%),
+    radial-gradient(ellipse 100% 70% at 50% -10%, rgba(176, 18, 58, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 80%, rgba(184, 134, 11, 0.08), transparent 50%),
     var(--bg);
 }
 
@@ -109,19 +110,18 @@ body {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, transparent 40%, var(--bg) 92%),
-    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(11, 122, 106, 0.22), transparent 70%),
-    radial-gradient(circle at 80% 70%, rgba(224, 122, 61, 0.16), transparent 45%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23102a2d' fill-opacity='0.035'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  animation: atmosphereDrift 18s ease-in-out infinite alternate;
+    linear-gradient(180deg, rgba(20, 12, 16, 0.2) 0%, rgba(20, 12, 16, 0.78) 55%, var(--bg) 100%),
+    radial-gradient(ellipse 90% 55% at 50% 15%, rgba(196, 59, 90, 0.35), transparent 65%),
+    radial-gradient(circle at 85% 75%, rgba(120, 30, 55, 0.4), transparent 40%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  animation: atmosphereDrift 16s ease-in-out infinite alternate;
 }
 
-[data-theme="dark"] .auth-atmosphere {
+[data-theme="light"] .auth-atmosphere {
   background:
-    linear-gradient(180deg, transparent 40%, var(--bg) 92%),
-    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(46, 196, 164, 0.18), transparent 70%),
-    radial-gradient(circle at 80% 70%, rgba(240, 160, 96, 0.12), transparent 45%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e8f1f2' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    linear-gradient(180deg, rgba(246, 238, 241, 0.25) 0%, rgba(246, 238, 241, 0.88) 60%, var(--bg) 100%),
+    radial-gradient(ellipse 90% 55% at 50% 15%, rgba(176, 18, 58, 0.16), transparent 65%),
+    radial-gradient(circle at 85% 75%, rgba(176, 18, 58, 0.1), transparent 40%);
 }
 
 @keyframes atmosphereDrift {
@@ -149,12 +149,26 @@ body {
   text-align: center;
 }
 
+.auth-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ember);
+  border: 1px solid rgba(232, 184, 109, 0.35);
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+  background: rgba(232, 184, 109, 0.08);
+}
+
 .logo-mark {
   width: 64px;
   height: 64px;
-  margin: 0 auto 20px;
+  margin: 0 auto 18px;
   border-radius: 20px;
-  background: linear-gradient(145deg, var(--accent), #086356);
+  background: linear-gradient(145deg, var(--accent), #7a1834);
   display: grid;
   place-items: center;
   position: relative;
@@ -182,21 +196,57 @@ body {
 
 .auth-brand h1 {
   font-family: var(--font-display);
-  font-size: clamp(42px, 12vw, 56px);
+  font-size: clamp(48px, 14vw, 64px);
   font-weight: 800;
   letter-spacing: -0.04em;
-  line-height: 1;
+  line-height: 0.95;
   color: var(--text1);
 }
 
 .auth-tagline {
-  margin-top: 12px;
-  font-size: 15px;
-  font-weight: 400;
+  margin-top: 16px;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text1);
+  line-height: 1.35;
+}
+
+.auth-sub {
+  margin-top: 10px;
+  font-size: 13px;
   color: var(--text2);
-  max-width: 260px;
+  max-width: 300px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.age-gate {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  border: 1px solid rgba(196, 59, 90, 0.28);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text2);
+  cursor: pointer;
+}
+.age-gate input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.age-gate strong { color: var(--text1); }
+
+.auth-legal {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
 }
 
 .auth-form {
@@ -424,7 +474,7 @@ button.chat-btn {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: linear-gradient(145deg, var(--accent), #086356);
+  background: linear-gradient(145deg, var(--accent), #7a1834);
   color: #fff;
   display: flex;
   align-items: center;
@@ -624,7 +674,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(145deg, var(--accent), #086356);
+  background: linear-gradient(145deg, var(--accent), #7a1834);
   color: #fff;
   display: flex;
   align-items: center;
@@ -763,7 +813,7 @@ input[type="range"]::-webkit-slider-thumb {
   box-shadow: var(--shadow-soft);
   animation: notifIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-[data-theme="dark"] .notification {
+[data-theme="light"] .notification {
   background: var(--bg2);
   color: var(--text1);
   border: 1px solid var(--border2);

@@ -69,7 +69,7 @@ function updateMapWithUsers(users) {
         const myMarker = L.marker([appState.position.lat, appState.position.lng], {
             icon: L.divIcon({
                 className: 'getme-marker',
-                html: '<div style="background:#0b7a6a;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(16,42,45,0.25);"></div>',
+                html: '<div style="background:#c43b5a;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(20,12,16,0.35);"></div>',
                 iconSize: [18, 18]
             })
         }).addTo(map).bindPopup('<b>Vous</b>');
@@ -85,21 +85,21 @@ function updateMapWithUsers(users) {
         const m = L.marker([u.lat, u.lng], {
             icon: L.divIcon({
                 className: 'getme-marker',
-                html: '<div style="background:#e07a3d;width:22px;height:22px;border-radius:8px;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;font-family:Outfit,sans-serif;box-shadow:0 2px 8px rgba(16,42,45,0.2);">' + initial + '</div>',
+                html: '<div style="background:#e8b86d;width:22px;height:22px;border-radius:8px;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#140c10;font-family:Outfit,sans-serif;box-shadow:0 2px 8px rgba(20,12,16,0.3);">' + initial + '</div>',
                 iconSize: [22, 22]
             })
         }).addTo(map);
 
         const popupContent = '<div style="min-width:200px; text-align:left; font-family:Outfit,sans-serif;">' +
             '<strong style="font-size:15px;">' + safeName + '</strong><br>' +
-            '<span style="color:#4a6066;font-size:12px;">' + formatDistance(u.distance_km) + ' · ' + formatLastSeen(u.last_seen) + '</span><br>' +
-            '<span style="color:#0b7a6a;font-size:12px;">' + getAvailabilityLabel(u.availability) + '</span><br>' +
-            '<hr style="margin:10px 0;border:none;border-top:1px solid #dfe7ee;">' +
-            '<button id="popup-chat-' + u.user_id + '" class="popup-btn" style="background:#0b7a6a; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:white; font-weight:600;">Message</button>' +
-            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#dfe7ee; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:#102a2d; font-weight:600;">Profil</button>' +
-            '<button id="popup-route-' + u.user_id + '" class="popup-btn" style="background:#e07a3d; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:white; font-weight:600;">Itinéraire</button>' +
-            '<button id="popup-report-' + u.user_id + '" class="popup-btn" style="background:#fff; margin:3px; padding:7px 12px; border:1px solid #c94444; border-radius:10px; color:#c94444; font-weight:600;">Signaler</button>' +
-            '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:#fff; margin:3px; padding:7px 12px; border:1px solid #c94444; border-radius:10px; color:#c94444; font-weight:600;">Bloquer</button>' +
+            '<span style="color:#c4a8b0;font-size:12px;">' + formatDistance(u.distance_km) + ' · ' + formatLastSeen(u.last_seen) + '</span><br>' +
+            '<span style="color:#c43b5a;font-size:12px;">' + getAvailabilityLabel(u.availability) + '</span><br>' +
+            '<hr style="margin:10px 0;border:none;border-top:1px solid #2a1a22;">' +
+            '<button id="popup-chat-' + u.user_id + '" class="popup-btn" style="background:#c43b5a; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:white; font-weight:600;">Message</button>' +
+            '<button id="popup-profile-' + u.user_id + '" class="popup-btn" style="background:#2a1a22; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:#f7ebe8; font-weight:600;">Profil</button>' +
+            '<button id="popup-route-' + u.user_id + '" class="popup-btn" style="background:#e8b86d; margin:3px; padding:7px 12px; border:none; border-radius:10px; color:#140c10; font-weight:600;">Itinéraire</button>' +
+            '<button id="popup-report-' + u.user_id + '" class="popup-btn" style="background:transparent; margin:3px; padding:7px 12px; border:1px solid #e85d5d; border-radius:10px; color:#e85d5d; font-weight:600;">Signaler</button>' +
+            '<button id="popup-block-' + u.user_id + '" class="popup-btn" style="background:transparent; margin:3px; padding:7px 12px; border:1px solid #e85d5d; border-radius:10px; color:#e85d5d; font-weight:600;">Bloquer</button>' +
             '</div>';
         m.bindPopup(popupContent);
 
