@@ -8,7 +8,7 @@ import { appState } from './state.js';
 import { initPushForUser, registerPushSubscription, ensureNotificationPermission } from './push.js';
 import { initCallListeners, stopCallListeners } from './call.js';
 
-const CACHE_VERSION = 'v4.2.5';
+const CACHE_VERSION = 'v4.2.6';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
