@@ -115,26 +115,25 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 25%;
-  filter: contrast(1.12) saturate(1.15) brightness(1.18);
+  object-position: center 30%;
+  transform: scale(1.04);
+  animation: heroDrift 22s ease-in-out infinite alternate;
 }
 .auth-hero-veil {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg,
-      rgba(20,12,16,0.05) 0%,
-      rgba(20,12,16,0.08) 35%,
-      rgba(20,12,16,0.35) 68%,
-      rgba(20,12,16,0.88) 100%);
+    linear-gradient(180deg, rgba(20,12,16,0.25) 0%, rgba(20,12,16,0.45) 35%, rgba(20,12,16,0.88) 68%, #140c10 100%),
+    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(196,59,90,0.22), transparent 60%);
 }
 [data-theme="light"] .auth-hero-veil {
   background:
-    linear-gradient(180deg,
-      rgba(246,238,241,0.05) 0%,
-      rgba(246,238,241,0.15) 45%,
-      rgba(246,238,241,0.75) 78%,
-      #f6eef1 100%);
+    linear-gradient(180deg, rgba(246,238,241,0.2) 0%, rgba(246,238,241,0.55) 40%, rgba(246,238,241,0.92) 75%, #f6eef1 100%),
+    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(176,18,58,0.12), transparent 60%);
+}
+@keyframes heroDrift {
+  from { transform: scale(1.04) translateY(0); }
+  to   { transform: scale(1.1) translateY(-2%); }
 }
 
 .auth-atmosphere {
@@ -142,13 +141,12 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* light grain only — keep photo readable */
-  opacity: 0.25;
   background:
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  animation: atmosphereDrift 16s ease-in-out infinite alternate;
 }
 
-[data-theme="light"] .auth-atmosphere { opacity: 0.15; }
+[data-theme="light"] .auth-atmosphere { opacity: 0.45; }
 
 @keyframes atmosphereDrift {
   from { transform: scale(1) translateY(0); }
@@ -280,16 +278,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: riseIn 0.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(20, 12, 16, 0.55);
-  border: 1px solid rgba(247, 235, 232, 0.1);
-  backdrop-filter: blur(10px);
-}
-[data-theme="light"] .auth-form {
-  background: rgba(255, 250, 251, 0.72);
-  border-color: rgba(26, 15, 20, 0.08);
+  animation: riseIn 0.8s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .auth-actions {
@@ -449,62 +438,21 @@ button.chat-btn {
 }
 
 /* ═══════════════════════════
-   MAIN APP — clear desire hero after login
+   MAIN APP
 ═══════════════════════════ */
 #mainScreen {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   animation: riseIn 0.45s ease both;
-  position: relative;
-}
-
-.app-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.app-backdrop-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 20%;
-  filter: contrast(1.1) saturate(1.08) brightness(1.14);
-}
-/* Light veil so legs stay clear after connection */
-.app-backdrop-veil {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg,
-      rgba(20,12,16,0.28) 0%,
-      rgba(20,12,16,0.22) 35%,
-      rgba(20,12,16,0.45) 70%,
-      rgba(20,12,16,0.78) 100%);
-}
-[data-theme="light"] .app-backdrop-veil {
-  background:
-    linear-gradient(180deg,
-      rgba(246,238,241,0.35) 0%,
-      rgba(246,238,241,0.4) 40%,
-      rgba(246,238,241,0.72) 75%,
-      rgba(246,238,241,0.9) 100%);
-}
-
-#mainScreen > .app-header,
-#mainScreen > .tabs,
-#mainScreen > .app-main {
-  position: relative;
-  z-index: 1;
 }
 
 .app-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--bg2);
+  background: var(--surface);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   padding: 12px 16px;
 }
@@ -588,7 +536,8 @@ button.chat-btn {
   gap: 4px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg2);
+  background: var(--surface);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 69px;
   z-index: 90;
