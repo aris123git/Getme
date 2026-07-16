@@ -303,10 +303,17 @@ export async function startVideoCall(peerId, peerName) {
         console.error('startVideoCall:', err);
         hideCallUi();
         activeCall = null;
-        const msg = (err.message || '').includes('calls')
-            ? 'Table calls manquante — exécutez supabase-calls-push.sql'
-            : 'Impossible de démarrer l\'appel';
-        showNotification(msg, true);
+        const raw = err?.message || err?.code || '';
+        const missing =
+            /schema cache|could not find the table|relation .*calls.* does not exist|PGRST/i.test(String(raw))
+            || String(raw).toLowerCase().includes('calls');
+        showNotification(
+            missing
+                ? 'Table « calls » absente : ouvrez Supabase → SQL → collez CREATE_CALLS.sql → Run'
+                : (raw || 'Impossible de démarrer l\'appel'),
+            true
+        );
+        console.error('Pour créer la table, exécutez CREATE_CALLS.sql dans le SQL Editor Supabase.');
     }
 }
 

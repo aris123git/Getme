@@ -1,8 +1,11 @@
--- Getme: calls + web push
--- Collez ce fichier OU CREATE_CALLS.sql dans Supabase → SQL Editor → Run
+-- ═══════════════════════════════════════════════════════════
+-- GETME — Créer la table "calls" (+ push)
+-- À coller dans : Supabase → SQL Editor → New query → Run
+-- ═══════════════════════════════════════════════════════════
 
 create extension if not exists "pgcrypto";
 
+-- Table des appels vidéo 1-1
 create table if not exists public.calls (
   id uuid primary key default gen_random_uuid(),
   caller_id uuid not null references auth.users(id) on delete cascade,
@@ -21,6 +24,7 @@ create table if not exists public.calls (
 create index if not exists calls_callee_status_idx on public.calls (callee_id, status);
 create index if not exists calls_caller_idx on public.calls (caller_id);
 
+-- Abonnements notifications navigateur
 create table if not exists public.push_subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -34,6 +38,7 @@ create table if not exists public.push_subscriptions (
 
 create index if not exists push_subscriptions_user_idx on public.push_subscriptions (user_id);
 
+-- Sécurité (RLS)
 alter table public.calls enable row level security;
 alter table public.push_subscriptions enable row level security;
 
@@ -65,6 +70,7 @@ drop policy if exists "push_delete_own" on public.push_subscriptions;
 create policy "push_delete_own" on public.push_subscriptions
   for delete using (auth.uid() = user_id);
 
+-- Realtime (appels entrants en direct)
 alter table public.calls replica identity full;
 
 do $$
@@ -75,3 +81,6 @@ begin
     null;
   end;
 end $$;
+
+-- Vérification
+select 'OK — table calls prête' as result;

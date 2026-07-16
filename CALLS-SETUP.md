@@ -12,13 +12,15 @@
 
 Les **appels multi / groupe** viendront ensuite (Daily `max_participants`).
 
-## 1) SQL Supabase (obligatoire)
+## 1) SQL Supabase (obligatoire — sinon « table calls manquante »)
 
-Dans le SQL Editor Supabase, exécutez le fichier :
+1. Ouvrez [Supabase Dashboard](https://supabase.com/dashboard) → votre projet  
+2. Menu **SQL** → **New query**  
+3. Ouvrez le fichier **`CREATE_CALLS.sql`** du dépôt, copiez tout  
+4. Collez dans l’éditeur → cliquez **Run**  
+5. Vous devez voir : `OK — table calls prête`
 
-`supabase-calls-push.sql`
-
-Cela crée `calls`, `push_subscriptions`, RLS et Realtime.
+Sans cette étape, le bouton **Appel** ne peut pas fonctionner.
 
 ## 2) Notifications push (Netlify env — ne jamais committer les secrets)
 
