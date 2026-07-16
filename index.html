@@ -60,13 +60,17 @@
     </div>
   </div>
 
-  <!-- ── MAIN SCREEN ── -->
-  <div id="mainScreen" class="hidden">
+  <!-- ── MAIN SCREEN (after login) ── -->
+  <!-- Line order: backdrop → header → tabs → tab content -->
+  <div id="mainScreen" class="hidden" data-tab="map">
+
+    <!-- 1. Bed sheet background (behind everything, no clicks) -->
     <div class="app-backdrop" aria-hidden="true">
       <img src="images/hero-desire.jpg" alt="" class="app-backdrop-img">
       <div class="app-backdrop-veil"></div>
     </div>
 
+    <!-- 2. Sticky top bar: profile row, then tabs (always fully visible) -->
     <header class="app-header">
       <div class="header-content">
         <div class="profile-header">
@@ -84,18 +88,19 @@
           <button id="logoutBtn" class="danger small" type="button">Sortir</button>
         </div>
       </div>
+
+      <nav class="tabs" aria-label="Navigation">
+        <div class="tab active" data-tab="map">Carte</div>
+        <div class="tab" data-tab="messages">Messages</div>
+        <div class="tab" data-tab="profile">Profil</div>
+        <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">Admin</div>
+      </nav>
     </header>
 
-    <nav class="tabs" aria-label="Navigation">
-      <div class="tab active" data-tab="map">Carte</div>
-      <div class="tab" data-tab="messages">Messages</div>
-      <div class="tab" data-tab="profile">Profil</div>
-      <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">Admin</div>
-    </nav>
-
+    <!-- 3. Tab panels -->
     <main class="app-main">
 
-      <!-- TAB CARTE -->
+      <!-- CARTE: desire line first, then controls (hidden with this section) -->
       <section id="mapTab">
         <p class="desire-line">Découvre qui a envie.</p>
         <div id="gpsStatus" class="info-card">Activez votre position pour commencer</div>
@@ -113,7 +118,7 @@
         <div id="nearbyList"></div>
       </section>
 
-      <!-- TAB MESSAGES -->
+      <!-- MESSAGES: no desire line -->
       <section id="messagesTab" class="hidden">
         <div id="conversationsList" class="loading">Chargement</div>
         <div id="chatView" class="hidden">
@@ -130,7 +135,7 @@
         </div>
       </section>
 
-      <!-- TAB PROFIL -->
+      <!-- PROFIL: no desire line -->
       <section id="profileTab" class="hidden">
         <h2 class="section-title">Votre profil</h2>
         <label class="field">
@@ -162,7 +167,7 @@
         </div>
       </section>
 
-      <!-- TAB ADMIN -->
+      <!-- ADMIN -->
       <section id="adminTab" class="hidden">
         <h2 class="section-title">Signalements</h2>
         <div id="reportsList" class="loading">Chargement</div>
@@ -176,6 +181,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.5.2"></script>
+<script type="module" src="js/main.js?v=4.5.3"></script>
 </body>
 </html>

@@ -18,6 +18,8 @@ export function setTabActive(tabName) {
     const tabIds = { map: 'mapTab', messages: 'messagesTab', profile: 'profileTab', admin: 'adminTab' };
     Object.values(tabIds).forEach(id => document.getElementById(id)?.classList.add('hidden'));
     document.getElementById(tabIds[tabName])?.classList.remove('hidden');
+    // Keep main screen in sync (desire line lives only in #mapTab)
+    document.getElementById('mainScreen')?.setAttribute('data-tab', tabName);
 }
 
 // --- Loader sur bouton pendant une action async ---
