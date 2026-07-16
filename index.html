@@ -63,6 +63,7 @@
   <!-- ── MAIN SCREEN ── -->
   <div id="mainScreen" class="hidden">
     <header class="app-header">
+      <p class="desire-line">Qui a envie, près de vous, maintenant.</p>
       <div class="header-content">
         <div class="profile-header">
           <div class="avatar" id="profileAvatar" title="Changer la photo">G</div>
@@ -79,14 +80,13 @@
           <button id="logoutBtn" class="danger small" type="button">Sortir</button>
         </div>
       </div>
+      <nav class="tabs" aria-label="Navigation">
+        <div class="tab active" data-tab="map">Carte</div>
+        <div class="tab" data-tab="messages">Messages</div>
+        <div class="tab" data-tab="profile">Profil</div>
+        <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">Admin</div>
+      </nav>
     </header>
-
-    <nav class="tabs" aria-label="Navigation">
-      <div class="tab active" data-tab="map">Carte</div>
-      <div class="tab" data-tab="messages">Messages</div>
-      <div class="tab" data-tab="profile">Profil</div>
-      <div class="tab" data-tab="admin" id="adminTabBtn" style="display:none;">Admin</div>
-    </nav>
 
     <main class="app-main">
 
@@ -170,6 +170,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.2.6"></script>
+<script type="module" src="js/main.js?v=4.2.7"></script>
 </body>
 </html>
