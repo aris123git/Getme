@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4.2.0';
+const CACHE_VERSION = 'v4.2.1';
 const CACHE_NAME = `getme-${CACHE_VERSION}`;
 
 const urlsToCache = [
@@ -19,6 +19,7 @@ const urlsToCache = [
     '/js/push.js',
     '/js/call.js',
     '/manifest.json',
+    '/images/hero-desire.jpg',
     '/icons/icon-192.png',
     '/icons/icon-512.png'
 ];
