@@ -270,15 +270,18 @@ export async function loadConversations() {
     }
     container.innerHTML = conversations.map(c => {
         const initial = escapeHtml((c.username || '?').charAt(0).toUpperCase());
+        const safeName = escapeHtml(c.username || '?');
         return `
-        <div class="user-card" data-id="${c.other_user_id}" data-name="${escapeHtml(c.username)}">
-            <div class="user-card-avatar">${c.avatar_url ? `<img src="${escapeHtml(c.avatar_url)}" alt="">` : initial}</div>
-            <div style="flex:1;">
-                <div class="user-name">${escapeHtml(c.username)}</div>
+        <div class="user-card" data-id="${c.other_user_id}" data-name="${safeName}">
+            <button type="button" class="user-card-avatar conv-profile-btn" data-id="${c.other_user_id}" data-name="${safeName}" title="Voir le profil">
+              ${c.avatar_url ? `<img src="${escapeHtml(c.avatar_url)}" alt="">` : initial}
+            </button>
+            <div class="user-card-body">
+                <button type="button" class="user-name conv-profile-btn" data-id="${c.other_user_id}" data-name="${safeName}">${safeName}</button>
                 <div class="user-distance">${escapeHtml(c.last_message || 'Nouvelle conversation')}</div>
             </div>
             ${c.unread_count > 0 ? `<span class="badge badge-unread">${c.unread_count}</span>` : ''}
-            <button class="chat-btn" data-id="${c.other_user_id}" data-name="${escapeHtml(c.username)}">→</button>
+            <button type="button" class="chat-btn" data-id="${c.other_user_id}" data-name="${safeName}" title="Ouvrir le chat">→</button>
         </div>`;
     }).join('');
     document.querySelectorAll('#conversationsList .chat-btn').forEach(btn => {
@@ -287,9 +290,26 @@ export async function loadConversations() {
             startChat(btn.dataset.id, btn.dataset.name);
         };
     });
+    document.querySelectorAll('#conversationsList .conv-profile-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            openPeerProfile(btn.dataset.id, btn.dataset.name);
+        };
+    });
+    // Rest of card opens the conversation
     document.querySelectorAll('#conversationsList .user-card').forEach(card => {
         card.onclick = () => startChat(card.dataset.id, card.dataset.name);
     });
+}
+
+async function openPeerProfile(userId, userName) {
+    try {
+        const { showUserProfile } = await import('./map.js');
+        await showUserProfile(userId, userName);
+    } catch (err) {
+        console.error('openPeerProfile:', err);
+        showNotification('Impossible d’ouvrir le profil', true);
+    }
 }
 
 export async function startChat(userId, userName) {
@@ -306,7 +326,18 @@ export async function startChat(userId, userName) {
     renderedMessageIds.clear();
 
     setState('currentChat', userId);
-    document.getElementById('chatWith').innerHTML = escapeHtml(userName);
+    const chatWith = document.getElementById('chatWith');
+    if (chatWith) {
+        chatWith.innerHTML =
+            `<button type="button" class="chat-with-link" id="chatWithProfileBtn" title="Voir le profil">
+                ${escapeHtml(userName)}
+                <span class="chat-with-hint">Voir profil · photos · bio</span>
+            </button>`;
+        const profileBtn = document.getElementById('chatWithProfileBtn');
+        if (profileBtn) {
+            profileBtn.onclick = () => openPeerProfile(userId, userName);
+        }
+    }
     document.getElementById('conversationsList').classList.add('hidden');
     document.getElementById('chatView').classList.remove('hidden');
     bindCallButton(userId, userName);

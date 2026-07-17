@@ -135,7 +135,7 @@ function updateMapWithUsers(users) {
     map.invalidateSize();
 }
 
-async function showUserProfile(userId, username) {
+export async function showUserProfile(userId, username) {
     let profile = null;
     try {
         const { data, error } = await supabase
@@ -241,32 +241,43 @@ export async function loadNearbyUsers() {
     for (let u of users) {
         const safeName = escapeHtml(u.username || '?');
         const initial = escapeHtml((u.username || '?').charAt(0).toUpperCase());
-        html += '<div class="user-card" data-id="' + u.user_id + '" data-name="' + safeName + '">' +
+        html += '<div class="user-card" data-id="' + u.user_id + '" data-name="' + safeName + '" title="Voir le profil">' +
             '<div class="user-card-avatar">' +
             (u.avatar_url ? '<img src="' + escapeHtml(u.avatar_url) + '" alt="">' : initial) +
             '</div>' +
-            '<div style="flex:1;">' +
+            '<div class="user-card-body">' +
             '<div class="user-name">' + safeName + '</div>' +
             '<div class="user-distance">' + formatDistance(u.distance_km) + '</div>' +
             '<div class="user-distance">' + formatLastSeen(u.last_seen) + '</div>' +
             '<div class="user-distance">' + getAvailabilityLabel(u.availability) + '</div>' +
+            '<div class="user-card-actions">' +
+            '<button type="button" class="profile-btn secondary small" data-id="' + u.user_id + '" data-name="' + safeName + '">Profil</button>' +
+            '<button type="button" class="chat-btn small" data-id="' + u.user_id + '" data-name="' + safeName + '">Message</button>' +
             '</div>' +
-            '<button class="chat-btn" data-id="' + u.user_id + '" data-name="' + safeName + '">→</button>' +
+            '</div>' +
             '</div>';
     }
     if (container) container.innerHTML = html;
 
     updateMapWithUsers(users);
 
-    document.querySelectorAll('.chat-btn').forEach(btn => {
+    document.querySelectorAll('#nearbyList .chat-btn').forEach(btn => {
         btn.onclick = (e) => {
             e.stopPropagation();
             startChat(btn.dataset.id, btn.dataset.name);
         };
     });
 
-    document.querySelectorAll('.user-card').forEach(card => {
-        card.onclick = () => startChat(card.dataset.id, card.dataset.name);
+    document.querySelectorAll('#nearbyList .profile-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            showUserProfile(btn.dataset.id, btn.dataset.name);
+        };
+    });
+
+    // Click card / avatar / name → open full profile (bio, photos…)
+    document.querySelectorAll('#nearbyList .user-card').forEach(card => {
+        card.onclick = () => showUserProfile(card.dataset.id, card.dataset.name);
     });
 }
 
