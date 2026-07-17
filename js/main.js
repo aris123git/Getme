@@ -1,14 +1,21 @@
 import { supabase } from './supabaseClient.js';
-import { handleAuthChange, login, signUp, logout } from './auth.js';
+import { handleAuthChange, login, signUp, logout, setSignupMode } from './auth.js';
 import { showNotification, setTabActive, withLoading } from './ui.js';
 import { startGeolocation, stopGeolocation, centerMapOnUser, loadNearbyUsers, debouncedLoadNearby } from './map.js';
 import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages, unsubscribeFromMessages } from './chat.js';
 import { updateProfile, uploadAvatar, refreshBalance, loadProfileForm } from './profile.js';
+import {
+    addGalleryPhotos,
+    setPhotoVisibility,
+    loadAccessRequestsPanel
+} from './photos.js';
 import { appState } from './state.js';
 import { initPushForUser, registerPushSubscription, ensureNotificationPermission } from './push.js';
 import { initCallListeners, stopCallListeners } from './call.js';
+import { api } from './api.js';
+import { escapeHtml } from './utils.js';
 
-const CACHE_VERSION = 'v4.5.3';
+const CACHE_VERSION = 'v4.6.0';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
@@ -18,6 +25,7 @@ function initAuthListeners() {
     const logoutBtn = document.getElementById('logoutBtn');
 
     const doLogin = () => {
+        setSignupMode(false);
         const email = document.getElementById('email')?.value || '';
         const pwd = document.getElementById('password')?.value || '';
         return login(email, pwd);
@@ -34,6 +42,13 @@ function initAuthListeners() {
         doLogin();
     };
     if (signupBtn) signupBtn.onclick = () => {
+        const extra = document.getElementById('signupExtra');
+        // First click reveals signup fields; second submits
+        if (extra?.classList.contains('hidden')) {
+            setSignupMode(true);
+            showNotification('Complétez votre profil pour créer le compte');
+            return;
+        }
         const email = document.getElementById('email')?.value || '';
         const pwd = document.getElementById('password')?.value || '';
         signUp(email, pwd);
@@ -84,18 +99,43 @@ function initMapListeners() {
 function initProfileListeners() {
     const saveBtn = document.getElementById('saveProfileBtn');
     const avatar = document.getElementById('profileAvatar');
+    const heroAvatar = document.getElementById('profileHeroAvatar');
+    const changeAvatarBtn = document.getElementById('changeAvatarBtn');
     const avatarInput = document.getElementById('avatarInput');
+    const galleryInput = document.getElementById('galleryInput');
+    const addGalleryBtn = document.getElementById('addGalleryPhotoBtn');
+    const hidePhotosBtn = document.getElementById('hidePhotosBtn');
+    const showPhotosBtn = document.getElementById('showPhotosBtn');
+    const manageAccessBtn = document.getElementById('manageAccessBtn');
+    const visibilitySel = document.getElementById('profilePhotoVisibility');
     const rechargeBtn = document.getElementById('rechargeBtn');
 
     if (saveBtn) {
         saveBtn.onclick = withLoading(saveBtn, updateProfile, 'Enregistrement…');
     }
-    if (avatar) avatar.onclick = () => avatarInput?.click();
+    const openAvatarPicker = () => avatarInput?.click();
+    if (avatar) avatar.onclick = openAvatarPicker;
+    if (heroAvatar) heroAvatar.onclick = openAvatarPicker;
+    if (changeAvatarBtn) changeAvatarBtn.onclick = openAvatarPicker;
     if (avatarInput) {
         avatarInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) uploadAvatar(file);
+            e.target.value = '';
         };
+    }
+    if (addGalleryBtn) addGalleryBtn.onclick = () => galleryInput?.click();
+    if (galleryInput) {
+        galleryInput.onchange = async (e) => {
+            await addGalleryPhotos(e.target.files);
+            e.target.value = '';
+        };
+    }
+    if (hidePhotosBtn) hidePhotosBtn.onclick = () => setPhotoVisibility('private');
+    if (showPhotosBtn) showPhotosBtn.onclick = () => setPhotoVisibility('public');
+    if (manageAccessBtn) manageAccessBtn.onclick = () => loadAccessRequestsPanel();
+    if (visibilitySel) {
+        visibilitySel.onchange = () => setPhotoVisibility(visibilitySel.value);
     }
     if (rechargeBtn) {
         rechargeBtn.classList.remove('hidden');
@@ -142,10 +182,41 @@ async function loadAdminData() {
     const reportsList = document.getElementById('reportsList');
     const bannedList = document.getElementById('bannedList');
     if (reportsList) {
-        reportsList.innerHTML = '<div class="info-card">Les signalements apparaîtront ici une fois la table <code>reports</code> créée sur Supabase.</div>';
+        reportsList.innerHTML = '<div class="info-card loading">Chargement…</div>';
+        try {
+            const { data, error } = await api.getReports();
+            if (error) throw error;
+            if (!data?.length) {
+                reportsList.innerHTML = '<div class="info-card">Aucun signalement</div>';
+            } else {
+                reportsList.innerHTML = data.map(r => `
+                    <div class="user-card">
+                        <div>
+                            <div class="user-name">Signalement</div>
+                            <div class="user-distance">${escapeHtml(r.reason || '')}</div>
+                            <div class="user-distance">${escapeHtml(r.status)} · ${escapeHtml(String(r.reported_id || '').slice(0, 8))}…</div>
+                        </div>
+                    </div>`).join('');
+            }
+        } catch (err) {
+            reportsList.innerHTML = '<div class="info-card">Table <code>reports</code> manquante — exécutez CREATE_PROFILES_PHOTOS.sql</div>';
+        }
     }
     if (bannedList) {
-        bannedList.innerHTML = '<div class="info-card">Aucun utilisateur banni pour le moment.</div>';
+        try {
+            const { data, error } = await supabase.from('profiles').select('id, username, banned').eq('banned', true).limit(50);
+            if (error) throw error;
+            if (!data?.length) {
+                bannedList.innerHTML = '<div class="info-card">Aucun utilisateur banni</div>';
+            } else {
+                bannedList.innerHTML = data.map(u => `
+                    <div class="user-card">
+                        <div class="user-name">${escapeHtml(u.username || u.id)}</div>
+                    </div>`).join('');
+            }
+        } catch (err) {
+            bannedList.innerHTML = '<div class="info-card">Colonne <code>banned</code> manquante — exécutez CREATE_PROFILES_PHOTOS.sql</div>';
+        }
     }
 }
 

@@ -1,5 +1,13 @@
 import { supabase } from './supabaseClient.js';
 import { showNotification } from './ui.js';
+import { api } from './api.js';
+import {
+    validateUsername,
+    validateAge,
+    compressImage,
+    MIN_AGE
+} from './utils.js';
+import { loadProfileForm } from './profile.js';
 
 function setAuthMsg(text, isError = false) {
     const el = document.getElementById('authMsg');
@@ -23,6 +31,9 @@ function friendlyAuthError(error) {
     }
     if (msg.includes('network') || msg.includes('fetch')) {
         return 'Connexion réseau impossible. Réessayez.';
+    }
+    if (msg.includes('duplicate') || msg.includes('unique')) {
+        return 'Ce pseudo est déjà pris.';
     }
     return error?.message || 'Erreur d\'authentification';
 }
@@ -54,8 +65,60 @@ function requireAdultConfirm() {
     return true;
 }
 
+export function setSignupMode(active) {
+    const extra = document.getElementById('signupExtra');
+    if (!extra) return;
+    extra.classList.toggle('hidden', !active);
+}
+
+function collectSignupProfile() {
+    const username = document.getElementById('signupUsername')?.value.trim() || '';
+    const ageRaw = document.getElementById('signupAge')?.value;
+    const gender = document.getElementById('signupGender')?.value || '';
+    const city = document.getElementById('signupCity')?.value.trim() || '';
+    const bio = document.getElementById('signupBio')?.value.trim() || '';
+    const avatarFile = document.getElementById('signupAvatar')?.files?.[0] || null;
+
+    if (!validateUsername(username)) {
+        return { error: 'Pseudo : 3–30 caractères (lettres, chiffres, _)' };
+    }
+    if (!validateAge(ageRaw)) {
+        return { error: `Âge invalide — minimum ${MIN_AGE} ans` };
+    }
+    if (!['femme', 'homme', 'autre'].includes(gender)) {
+        return { error: 'Choisissez votre sexe' };
+    }
+    if (!city || city.length < 2) {
+        return { error: 'Ville requise' };
+    }
+
+    return {
+        profile: {
+            username,
+            age: Number(ageRaw),
+            gender,
+            city,
+            bio,
+            photo_visibility: 'public',
+            availability: 'now'
+        },
+        avatarFile
+    };
+}
+
+async function persistSignupProfile(userId, profile, avatarFile) {
+    const { error } = await api.upsertProfile(userId, profile);
+    if (error) throw error;
+    if (avatarFile) {
+        const compressed = await compressImage(avatarFile);
+        await api.uploadAvatar(userId, compressed);
+    }
+}
+
 export async function signUp(email, password) {
     if (!requireAdultConfirm()) return false;
+    setSignupMode(true);
+
     const cleanEmail = (email || '').trim();
     if (!cleanEmail || !password) {
         setAuthMsg('Email et mot de passe requis', true);
@@ -68,12 +131,27 @@ export async function signUp(email, password) {
         return false;
     }
 
+    const collected = collectSignupProfile();
+    if (collected.error) {
+        setAuthMsg(collected.error, true);
+        showNotification(collected.error, true);
+        return false;
+    }
+
     await setAuthBusy(true, 'signup');
     setAuthMsg('Création du compte…');
     try {
         const { data, error } = await supabase.auth.signUp({
             email: cleanEmail,
-            password
+            password,
+            options: {
+                data: {
+                    username: collected.profile.username,
+                    age: collected.profile.age,
+                    gender: collected.profile.gender,
+                    city: collected.profile.city
+                }
+            }
         });
         if (error) {
             const friendly = friendlyAuthError(error);
@@ -81,15 +159,27 @@ export async function signUp(email, password) {
             showNotification(friendly, true);
             return false;
         }
-        // If session returned, user is already signed in (confirmations disabled)
+
+        const user = data?.session?.user || data?.user;
+        if (user) {
+            try {
+                await persistSignupProfile(user.id, collected.profile, collected.avatarFile);
+            } catch (profileErr) {
+                console.warn('profile after signup:', profileErr);
+                setAuthMsg('Compte créé — complétez le profil dans l’onglet Profil (SQL peut manquer).', true);
+            }
+        }
+
         if (data?.session?.user) {
             setAuthMsg('Compte créé — bienvenue !');
             showNotification('Compte créé');
             await showAppForUser(data.session.user);
+            await loadProfileForm();
             return true;
         }
         setAuthMsg('Compte créé. Si un email de confirmation est requis, validez-le puis connectez-vous.');
         showNotification('Compte créé — vous pouvez vous connecter');
+        setSignupMode(false);
         return true;
     } catch (err) {
         const friendly = friendlyAuthError(err);
@@ -103,6 +193,7 @@ export async function signUp(email, password) {
 
 export async function login(email, password) {
     if (!requireAdultConfirm()) return false;
+    setSignupMode(false);
     const cleanEmail = (email || '').trim();
     if (!cleanEmail || !password) {
         setAuthMsg('Email et mot de passe requis', true);
@@ -155,6 +246,7 @@ export async function logout() {
 export function showAuthScreen() {
     document.getElementById('authScreen')?.classList.remove('hidden');
     document.getElementById('mainScreen')?.classList.add('hidden');
+    setSignupMode(false);
 }
 
 export async function showAppForUser(user) {

@@ -47,6 +47,39 @@
           <span>Mot de passe</span>
           <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required minlength="6">
         </label>
+
+        <div id="signupExtra" class="signup-extra hidden">
+          <label class="field">
+            <span>Pseudo *</span>
+            <input type="text" id="signupUsername" placeholder="ex. Awa_22" autocomplete="username" maxlength="30">
+          </label>
+          <label class="field">
+            <span>Âge *</span>
+            <input type="number" id="signupAge" placeholder="18+" min="18" max="120" inputmode="numeric">
+          </label>
+          <label class="field">
+            <span>Sexe *</span>
+            <select id="signupGender">
+              <option value="">Choisir…</option>
+              <option value="femme">Femme</option>
+              <option value="homme">Homme</option>
+              <option value="autre">Autre</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Ville *</span>
+            <input type="text" id="signupCity" placeholder="ex. Ouagadougou" maxlength="80">
+          </label>
+          <label class="field">
+            <span>Bio (courte)</span>
+            <textarea id="signupBio" placeholder="Parlez de vous…" rows="2" maxlength="280"></textarea>
+          </label>
+          <label class="field">
+            <span>Photo de profil (optionnelle)</span>
+            <input type="file" id="signupAvatar" accept="image/jpeg,image/png,image/webp">
+          </label>
+        </div>
+
         <label class="age-gate" for="ageConfirm">
           <input type="checkbox" id="ageConfirm">
           <span>J’ai <strong>18 ans ou plus</strong> et je cherche uniquement des rencontres sexuelles consensuelles entre adultes.</span>
@@ -75,7 +108,7 @@
       <div class="header-content">
         <div class="profile-header">
           <div class="avatar" id="profileAvatar" title="Changer la photo">G</div>
-          <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+          <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" style="display:none;">
           <div class="header-identity">
             <span class="brand-inline">Getme</span>
             <span id="userName"></span>
@@ -135,16 +168,40 @@
         </div>
       </section>
 
-      <!-- PROFIL: no desire line -->
+      <!-- PROFIL -->
       <section id="profileTab" class="hidden">
         <h2 class="section-title">Votre profil</h2>
+
+        <div class="profile-hero-card">
+          <div class="avatar profile-hero-avatar" id="profileHeroAvatar" title="Photo de profil">G</div>
+          <button type="button" id="changeAvatarBtn" class="secondary small">Changer la photo de profil</button>
+          <p class="profile-meta" id="profileMetaLine">Complétez votre profil</p>
+        </div>
+
         <label class="field">
-          <span>Nom d'utilisateur</span>
-          <input type="text" id="profileName" placeholder="ex. Awa_22">
+          <span>Pseudo</span>
+          <input type="text" id="profileName" placeholder="ex. Awa_22" maxlength="30">
+        </label>
+        <label class="field">
+          <span>Âge</span>
+          <input type="number" id="profileAge" placeholder="18+" min="18" max="120" inputmode="numeric">
+        </label>
+        <label class="field">
+          <span>Sexe</span>
+          <select id="profileGender">
+            <option value="">Non précisé</option>
+            <option value="femme">Femme</option>
+            <option value="homme">Homme</option>
+            <option value="autre">Autre</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Ville</span>
+          <input type="text" id="profileCity" placeholder="ex. Ouagadougou" maxlength="80">
         </label>
         <label class="field">
           <span>Bio</span>
-          <textarea id="profileBio" placeholder="Parlez de vous…" rows="3"></textarea>
+          <textarea id="profileBio" placeholder="Parlez de vous…" rows="3" maxlength="500"></textarea>
         </label>
         <label class="field">
           <span>Téléphone Orange Money</span>
@@ -158,6 +215,29 @@
             <option value="week">Disponible cette semaine</option>
           </select>
         </label>
+
+        <h3 class="section-subtitle">Confidentialité des photos</h3>
+        <label class="field">
+          <span>Visibilité</span>
+          <select id="profilePhotoVisibility">
+            <option value="public">Public — tous peuvent voir</option>
+            <option value="private">Privé — cachées par défaut</option>
+            <option value="on_request">Sur demande — accès après approbation</option>
+          </select>
+        </label>
+        <div class="button-group privacy-actions">
+          <button type="button" id="hidePhotosBtn" class="secondary">Cacher mes photos</button>
+          <button type="button" id="showPhotosBtn" class="secondary">Afficher mes photos</button>
+        </div>
+        <button type="button" id="manageAccessBtn" class="secondary">Gérer les demandes d'accès</button>
+        <div id="accessRequestsPanel" class="access-panel hidden"></div>
+
+        <h3 class="section-subtitle">Galerie photos</h3>
+        <p class="field-hint">JPG, PNG ou WEBP · max 5 Mo · compression auto · jusqu’à 9 photos</p>
+        <div id="photoGallery" class="photo-gallery"></div>
+        <input type="file" id="galleryInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;">
+        <button type="button" id="addGalleryPhotoBtn" class="secondary">Ajouter des photos</button>
+
         <button id="saveProfileBtn" type="button">Enregistrer le profil</button>
         <button id="enablePushBtn" type="button" class="secondary">Activer les notifications</button>
         <div class="balance-panel">
@@ -181,6 +261,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.5.3"></script>
+<script type="module" src="js/main.js?v=4.6.0"></script>
 </body>
 </html>

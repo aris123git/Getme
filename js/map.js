@@ -2,7 +2,7 @@ import { supabase } from './supabaseClient.js';
 import { appState, setState, updatePosition } from './state.js';
 import { api } from './api.js';
 import { GPS_OPTIONS, DEFAULT_RADIUS } from './config.js';
-import { formatDistance, debounce, escapeHtml } from './utils.js';
+import { formatDistance, debounce, escapeHtml, genderLabel, visibilityLabel } from './utils.js';
 import { showNotification, showConfirmModal } from './ui.js';
 import { reportUser, blockUser } from './profile.js';
 import { startChat } from './chat.js';
@@ -140,7 +140,7 @@ async function showUserProfile(userId, username) {
     try {
         const { data, error } = await supabase
             .from('profiles')
-            .select('username, bio, avatar_url, availability, last_seen')
+            .select('username, bio, avatar_url, availability, last_seen, age, gender, city, photo_visibility')
             .eq('id', userId)
             .single();
         if (error) throw error;
@@ -154,18 +154,29 @@ async function showUserProfile(userId, username) {
     const existing = document.querySelector('.profile-modal-overlay');
     if (existing) existing.remove();
 
+    const meta = [
+        profile?.age ? (profile.age + ' ans') : '',
+        genderLabel(profile?.gender),
+        profile?.city || '',
+        visibilityLabel(profile?.photo_visibility || 'public')
+    ].filter(Boolean).join(' · ');
+
     const modal = document.createElement('div');
     modal.className = 'profile-modal-overlay confirm-overlay';
-    modal.innerHTML = '<div class="confirm-box" style="max-width:320px;">' +
+    modal.innerHTML = '<div class="confirm-box profile-public-card">' +
         (profile?.avatar_url
-            ? '<img src="' + escapeHtml(profile.avatar_url) + '" alt="" style="width:80px;height:80px;border-radius:16px;margin-bottom:12px;object-fit:cover;">'
-            : '<div class="avatar" style="width:80px;height:80px;margin:0 auto 12px;font-size:28px;">' + escapeHtml((profile?.username || username || '?').charAt(0).toUpperCase()) + '</div>') +
-        '<h3 style="margin-bottom:8px;">' + escapeHtml(profile?.username || username) + '</h3>' +
-        '<p style="color:var(--text2);margin-bottom:8px;">' + escapeHtml(profile?.bio || 'Aucune bio') + '</p>' +
-        '<p style="margin-bottom:4px;">' + getAvailabilityLabel(profile?.availability) + '</p>' +
-        '<p style="margin-bottom:16px;">' + formatLastSeen(profile?.last_seen) + '</p>' +
-        '<div class="confirm-actions">' +
+            ? '<img class="profile-public-avatar" src="' + escapeHtml(profile.avatar_url) + '" alt="">'
+            : '<div class="avatar profile-public-avatar-fallback">' + escapeHtml((profile?.username || username || '?').charAt(0).toUpperCase()) + '</div>') +
+        '<h3>' + escapeHtml(profile?.username || username) + '</h3>' +
+        (meta ? '<p class="profile-public-meta">' + escapeHtml(meta) + '</p>' : '') +
+        '<p class="profile-public-bio">' + escapeHtml(profile?.bio || 'Aucune bio') + '</p>' +
+        '<p class="profile-public-status">' + getAvailabilityLabel(profile?.availability) + '</p>' +
+        '<p class="profile-public-status">' + formatLastSeen(profile?.last_seen) + '</p>' +
+        '<div id="profilePublicGallery" class="profile-public-gallery"></div>' +
+        '<div class="confirm-actions profile-public-actions">' +
         '<button class="secondary" id="closeModalBtn">Fermer</button>' +
+        '<button class="secondary" id="profileReportBtn">Signaler</button>' +
+        '<button class="danger small" id="profileBlockBtn">Bloquer</button>' +
         '<button id="profileChatBtn">Message</button>' +
         '</div></div>';
     document.body.appendChild(modal);
@@ -174,7 +185,23 @@ async function showUserProfile(userId, username) {
         modal.remove();
         startChat(userId, profile?.username || username);
     };
+    document.getElementById('profileReportBtn').onclick = async () => {
+        const reason = prompt('Motif du signalement :');
+        if (reason?.trim()) {
+            await reportUser(userId, reason.trim());
+        }
+    };
+    document.getElementById('profileBlockBtn').onclick = async () => {
+        const ok = await showConfirmModal('Bloquer cet utilisateur ?');
+        if (ok) {
+            await blockUser(userId);
+            modal.remove();
+        }
+    };
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    const { renderViewerGallery } = await import('./photos.js');
+    renderViewerGallery(userId, document.getElementById('profilePublicGallery'));
 }
 
 export async function loadNearbyUsers() {

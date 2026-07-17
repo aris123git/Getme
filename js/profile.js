@@ -1,25 +1,67 @@
 import { supabase } from './supabaseClient.js';
 import { appState, updateBalance } from './state.js';
 import { api } from './api.js';
-import { validateUsername, compressImage, escapeHtml } from './utils.js';
+import {
+    validateUsername,
+    validateAge,
+    compressImage,
+    escapeHtml,
+    genderLabel,
+    visibilityLabel,
+    MIN_AGE
+} from './utils.js';
 import { showNotification, showConfirmModal } from './ui.js';
 import { loadNearbyUsers } from './map.js';
+import { loadOwnGallery } from './photos.js';
+
+function setAvatarPreview(url, username) {
+    const html = url
+        ? `<img src="${escapeHtml(url)}" alt="">`
+        : escapeHtml((username || 'G').charAt(0).toUpperCase());
+    const header = document.getElementById('profileAvatar');
+    const hero = document.getElementById('profileHeroAvatar');
+    if (header) header.innerHTML = html;
+    if (hero) hero.innerHTML = html;
+}
+
+function updateMetaLine(profile) {
+    const el = document.getElementById('profileMetaLine');
+    if (!el || !profile) return;
+    const bits = [];
+    if (profile.age) bits.push(`${profile.age} ans`);
+    if (genderLabel(profile.gender)) bits.push(genderLabel(profile.gender));
+    if (profile.city) bits.push(profile.city);
+    bits.push(visibilityLabel(profile.photo_visibility || 'public'));
+    el.textContent = bits.join(' · ') || 'Complétez votre profil';
+}
 
 export async function loadProfileForm() {
     if (!appState.user) return;
     try {
         const { data: profile, error } = await api.getProfile(appState.user.id);
         if (error || !profile) return;
-        document.getElementById('profileName').value = profile.username || '';
-        document.getElementById('profileBio').value = profile.bio || '';
-        document.getElementById('profilePhone').value = profile.phone || '';
-        document.getElementById('profileAvailability').value = profile.availability || 'now';
-        if (profile.avatar_url) {
-            document.getElementById('profileAvatar').innerHTML = `<img src="${escapeHtml(profile.avatar_url)}" alt="">`;
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val ?? '';
+        };
+        set('profileName', profile.username || '');
+        set('profileBio', profile.bio || '');
+        set('profilePhone', profile.phone || '');
+        set('profileAvailability', profile.availability || 'now');
+        set('profileAge', profile.age ?? '');
+        set('profileGender', profile.gender || '');
+        set('profileCity', profile.city || '');
+        set('profilePhotoVisibility', profile.photo_visibility || 'public');
+
+        if (profile.avatar_url || profile.username) {
+            setAvatarPreview(profile.avatar_url, profile.username);
         }
         if (profile.username) {
-            document.getElementById('userName').innerText = profile.username;
+            const userNameEl = document.getElementById('userName');
+            if (userNameEl) userNameEl.innerText = profile.username;
         }
+        updateMetaLine(profile);
+        await loadOwnGallery();
     } catch (err) {
         console.error('loadProfileForm:', err);
     }
@@ -27,46 +69,61 @@ export async function loadProfileForm() {
 
 export async function updateProfile() {
     if (!appState.user) return;
-    const username = document.getElementById('profileName').value.trim();
+    const username = document.getElementById('profileName')?.value.trim() || '';
+    const ageRaw = document.getElementById('profileAge')?.value;
+    const gender = document.getElementById('profileGender')?.value || null;
+    const city = document.getElementById('profileCity')?.value.trim() || '';
+    const photoVisibility = document.getElementById('profilePhotoVisibility')?.value || 'public';
+
     if (!username) {
-        showNotification("Nom d'utilisateur requis", true);
+        showNotification("Pseudo requis", true);
         return;
     }
     if (!validateUsername(username)) {
-        showNotification("Username: 3-30 caractères, lettres/chiffres/_", true);
+        showNotification("Pseudo : 3-30 caractères, lettres/chiffres/_", true);
         return;
     }
+    if (ageRaw !== '' && ageRaw != null && !validateAge(ageRaw)) {
+        showNotification(`Âge invalide (min. ${MIN_AGE})`, true);
+        return;
+    }
+
+    const payload = {
+        username,
+        bio: document.getElementById('profileBio')?.value || '',
+        phone: document.getElementById('profilePhone')?.value || '',
+        availability: document.getElementById('profileAvailability')?.value || 'now',
+        city,
+        photo_visibility: photoVisibility
+    };
+    if (ageRaw !== '' && ageRaw != null) payload.age = Number(ageRaw);
+    if (gender) payload.gender = gender;
+
     try {
-        const { error } = await api.updateProfile(appState.user.id, {
-            username: username,
-            bio: document.getElementById('profileBio').value,
-            phone: document.getElementById('profilePhone').value,
-            availability: document.getElementById('profileAvailability').value
-        });
+        const { error } = await api.updateProfile(appState.user.id, payload);
         if (error) throw error;
-        showNotification("Profil mis à jour !");
+        showNotification('Profil mis à jour !');
         document.getElementById('userName').innerText = username;
+        updateMetaLine({ ...payload, age: payload.age });
+        loadNearbyUsers();
     } catch (err) {
         console.error('updateProfile:', err);
-        showNotification("Erreur lors de la sauvegarde", true);
+        showNotification(err.message || 'Erreur lors de la sauvegarde — vérifiez le SQL Supabase', true);
     }
 }
 
 export async function uploadAvatar(file) {
     if (!file || !appState.user) return;
-    if (file.size > 2 * 1024 * 1024) {
-        showNotification("Fichier trop gros (max 2MB)", true);
-        return;
-    }
     try {
         const compressed = await compressImage(file);
         const url = await api.uploadAvatar(appState.user.id, compressed);
-        document.getElementById('profileAvatar').innerHTML = `<img src="${escapeHtml(url)}" alt="">`;
-        showNotification("Photo mise à jour !");
+        const name = document.getElementById('profileName')?.value || 'G';
+        setAvatarPreview(url, name);
+        showNotification('Photo de profil mise à jour !');
         loadNearbyUsers();
     } catch (err) {
         console.error('uploadAvatar:', err);
-        showNotification("Échec de l'upload", true);
+        showNotification(err.message || "Échec de l'upload", true);
     }
 }
 
@@ -104,7 +161,7 @@ export async function unlockUser(targetId, targetName) {
             .eq('target_id', targetId)
             .maybeSingle();
         if (existing) {
-            showNotification("Déjà débloqué !");
+            showNotification('Déjà débloqué !');
             return;
         }
         const { error } = await supabase.from('unlocks').insert({
@@ -116,7 +173,7 @@ export async function unlockUser(targetId, targetName) {
         loadNearbyUsers();
     } catch (err) {
         console.error('unlockUser:', err);
-        showNotification("Erreur technique", true);
+        showNotification('Erreur technique', true);
     }
 }
 
@@ -128,18 +185,17 @@ export async function blockUser(targetId) {
             blocked: targetId
         });
         if (error) throw error;
-        showNotification("Utilisateur bloqué");
+        showNotification('Utilisateur bloqué');
         loadNearbyUsers();
     } catch (err) {
         console.error('blockUser:', err);
-        showNotification("Erreur lors du blocage", true);
+        showNotification('Erreur lors du blocage — exécutez CREATE_PROFILES_PHOTOS.sql', true);
     }
 }
 
 export async function reportUser(targetId, reason) {
     if (!appState.user || !reason) return;
     try {
-        // Try to persist; if the reports table doesn't exist yet, fall back gracefully
         const { error } = await supabase.from('reports').insert({
             reporter_id: appState.user.id,
             reported_id: targetId,
@@ -147,14 +203,13 @@ export async function reportUser(targetId, reason) {
             status: 'pending'
         });
         if (error) {
-            console.warn('reports table unavailable:', error.message);
-            showNotification("Signalement enregistré localement — table reports à créer sur Supabase");
-            console.log('Signalement (non sauvegardé) :', { targetId, reason });
+            console.warn('reports:', error.message);
+            showNotification('Signalement non enregistré — exécutez CREATE_PROFILES_PHOTOS.sql', true);
             return;
         }
-        showNotification("Signalement envoyé — merci");
+        showNotification('Signalement envoyé — merci');
     } catch (err) {
         console.error('reportUser:', err);
-        showNotification("Signalement reçu localement — fonctionnalité complète à venir");
+        showNotification('Erreur signalement', true);
     }
 }

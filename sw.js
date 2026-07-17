@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4.5.3';
+const CACHE_VERSION = 'v4.6.0';
 const CACHE_NAME = `getme-${CACHE_VERSION}`;
 
 const urlsToCache = [
@@ -14,6 +14,7 @@ const urlsToCache = [
     '/js/map.js',
     '/js/chat.js',
     '/js/profile.js',
+    '/js/photos.js',
     '/js/ui.js',
     '/js/supabaseClient.js',
     '/js/push.js',

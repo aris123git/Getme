@@ -18,3 +18,8 @@
   from = "/api/send-push"
   to = "/.netlify/functions/send-push"
   status = 200
+
+[[redirects]]
+  from = "/api/photo-url"
+  to = "/.netlify/functions/photo-url"
+  status = 200
