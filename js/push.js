@@ -64,35 +64,75 @@ export async function registerPushSubscription(userId) {
 export async function notifyUserPush(userId, { title, message, url, tag, data } = {}) {
     if (!userId) return;
     try {
-        await fetch('/.netlify/functions/send-push', {
+        // Prefer /api redirect (netlify.toml); fall back to functions path
+        const res = await fetch('/api/send-push', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId,
                 title: title || 'Getme',
                 message: message || '',
-                url: url || '/',
+                url: url || '/?tab=messages',
                 tag: tag || 'getme',
                 data: data || {}
             })
         });
+        if (!res.ok) {
+            const alt = await fetch('/.netlify/functions/send-push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    title: title || 'Getme',
+                    message: message || '',
+                    url: url || '/?tab=messages',
+                    tag: tag || 'getme',
+                    data: data || {}
+                })
+            });
+            if (!alt.ok) {
+                console.warn('notifyUserPush status:', res.status, alt.status);
+            }
+        }
     } catch (err) {
         console.warn('notifyUserPush:', err);
     }
 }
 
-/** Local browser notification when tab is open / permission granted (no server needed). */
-export function showLocalNotification(title, options = {}) {
+/**
+ * System / OS notification.
+ * Uses the service worker when possible (required on many mobile browsers / PWAs).
+ * @param {string} title
+ * @param {{ body?: string, tag?: string, data?: object, force?: boolean }} [options]
+ */
+export async function showLocalNotification(title, options = {}) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    if (document.visibilityState === 'visible' && !options.force) return;
+
+    const pageHidden = document.visibilityState !== 'visible' || !document.hasFocus();
+    // While the app is focused, in-app toast is enough unless force is set
+    if (!pageHidden && !options.force) return;
+
+    const opts = {
+        body: options.body || '',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        tag: options.tag || 'getme-local',
+        data: options.data || { url: '/?tab=messages' },
+        renotify: true
+    };
+
     try {
-        const n = new Notification(title, {
-            body: options.body || '',
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-192.png',
-            tag: options.tag || 'getme-local',
-            data: options.data || {}
-        });
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.showNotification(title, opts);
+            return;
+        }
+    } catch (err) {
+        console.warn('sw showNotification:', err);
+    }
+
+    try {
+        const n = new Notification(title, opts);
         n.onclick = () => {
             window.focus();
             n.close();
@@ -104,6 +144,7 @@ export function showLocalNotification(title, options = {}) {
 
 export async function initPushForUser(userId) {
     if (!userId) return;
-    // Don't block login UX
+    // Only auto-register if permission already granted (browsers block silent prompts)
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
     setTimeout(() => registerPushSubscription(userId), 800);
 }

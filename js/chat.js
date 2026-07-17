@@ -17,11 +17,14 @@ let lastKnownUnread = 0;
 let lastNotifiedMessageId = null;
 let lastToastAt = 0;
 
-function toastNewMessage() {
+function toastNewMessage(preview) {
     const now = Date.now();
-    if (now - lastToastAt < 2500) return;
+    if (now - lastToastAt < 2000) return;
     lastToastAt = now;
-    showNotification('Nouveau message reçu');
+    const body = preview
+        ? `Nouveau message : ${String(preview).slice(0, 60)}`
+        : 'Nouveau message reçu';
+    showNotification(body);
 }
 
 function sameId(a, b) {
@@ -96,11 +99,13 @@ function handleIncomingMessage(msg, { notify = true } = {}) {
     // Not in that chat — notify + badge
     if (notify && msg.id != null && String(msg.id) !== String(lastNotifiedMessageId)) {
         lastNotifiedMessageId = msg.id;
-        toastNewMessage();
-        showLocalNotification('Nouveau message', {
-            body: 'Vous avez reçu un message sur Getme',
+        const preview = msg.message || '';
+        toastNewMessage(preview);
+        // OS notification when tab is in background (SW path); toast covers foreground
+        showLocalNotification('Nouveau message — Getme', {
+            body: preview ? String(preview).slice(0, 80) : 'Vous avez reçu un message',
             tag: 'getme-message',
-            data: { type: 'message' }
+            data: { type: 'message', url: '/?tab=messages', from: msg.sender_id }
         });
     }
     if (typeof onNewMessageCb === 'function') onNewMessageCb();

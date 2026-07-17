@@ -1,13 +1,51 @@
 import { escapeHtml } from './utils.js';
 
+let toastTimer = null;
+
+/**
+ * In-app toast — always visible above map/modals (top center).
+ * Use for login, GPS, errors, new messages, etc.
+ */
 export function showNotification(message, isError = false) {
-    const existing = document.querySelector('.notification');
-    if (existing) existing.remove();
+    const text = String(message || '').trim();
+    if (!text) return;
+
+    let host = document.getElementById('toastHost');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'toastHost';
+        host.setAttribute('aria-live', 'polite');
+        host.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(host);
+    }
+
+    // Replace any current toast
+    host.innerHTML = '';
+    if (toastTimer) {
+        clearTimeout(toastTimer);
+        toastTimer = null;
+    }
+
     const notif = document.createElement('div');
-    notif.className = `notification ${isError ? 'error' : ''}`;
-    notif.innerHTML = escapeHtml(message);
-    document.body.appendChild(notif);
-    setTimeout(() => notif.remove(), 3000);
+    notif.className = `notification${isError ? ' error' : ''}`;
+    notif.setAttribute('role', 'status');
+    notif.textContent = text;
+    host.appendChild(notif);
+
+    // Trigger enter animation after paint
+    requestAnimationFrame(() => {
+        notif.classList.add('is-visible');
+    });
+
+    const ms = isError ? 4500 : 3500;
+    toastTimer = setTimeout(() => {
+        notif.classList.remove('is-visible');
+        notif.classList.add('is-leaving');
+        setTimeout(() => {
+            if (notif.parentNode) notif.remove();
+        }, 280);
+        toastTimer = null;
+    }, ms);
 }
 
 export function setTabActive(tabName) {
