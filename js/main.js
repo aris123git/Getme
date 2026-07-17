@@ -15,7 +15,7 @@ import { initCallListeners, stopCallListeners } from './call.js';
 import { api } from './api.js';
 import { escapeHtml } from './utils.js';
 
-const CACHE_VERSION = 'v4.6.0';
+const CACHE_VERSION = 'v4.6.1';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {

@@ -48,11 +48,20 @@ export const api = {
         return supabase.from('messages').update({ read: true }).eq('sender_id', otherId).eq('receiver_id', userId);
     },
     async uploadAvatar(userId, file) {
-        const fileName = `${userId}_${Date.now()}.jpg`;
-        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file);
+        // Folder = user id → matches Storage RLS policies
+        const fileName = `${userId}/${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file, {
+            contentType: 'image/jpeg',
+            upsert: true
+        });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        await this.updateProfile(userId, { avatar_url: publicUrl });
+        const { error: profileErr } = await this.updateProfile(userId, { avatar_url: publicUrl });
+        if (profileErr) {
+            // Profile row may not exist yet — try upsert
+            const { error: upsertErr } = await this.upsertProfile(userId, { avatar_url: publicUrl });
+            if (upsertErr) throw upsertErr;
+        }
         return publicUrl;
     },
 
