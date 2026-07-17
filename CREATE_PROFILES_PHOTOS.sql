@@ -160,6 +160,10 @@ CREATE POLICY "blocks_all_own" ON public.blocks
   USING (blocker_id = auth.uid())
   WITH CHECK (blocker_id = auth.uid());
 
+-- Drop first: existing RPC may have a different return type
+DROP FUNCTION IF EXISTS public.block_user(uuid, uuid);
+DROP FUNCTION IF EXISTS public.block_user(blocker uuid, blocked uuid);
+
 CREATE OR REPLACE FUNCTION public.block_user(blocker uuid, blocked uuid)
 RETURNS void
 LANGUAGE plpgsql
