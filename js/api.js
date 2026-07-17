@@ -65,14 +65,19 @@ export const api = {
         return publicUrl;
     },
 
-    async listOwnPhotos(userId) {
+    async listPhotos(userId) {
         const { data, error } = await supabase
             .from('profile_photos')
-            .select('*')
+            .select('id, user_id, storage_path, sort_order, created_at')
             .eq('user_id', userId)
             .order('sort_order', { ascending: true });
         if (error) throw error;
         return data || [];
+    },
+
+    /** @deprecated use listPhotos */
+    async listOwnPhotos(userId) {
+        return this.listPhotos(userId);
     },
 
     async uploadGalleryPhoto(userId, file, sortOrder = 0) {
@@ -104,8 +109,51 @@ export const api = {
     },
 
     async fetchPhotoUrls(ownerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Non connecté');
+
+        const { data: profile } = await this.getProfile(ownerId);
+        const visibility = profile?.photo_visibility || 'public';
+        const isOwner = user.id === ownerId;
+
+        if (!isOwner && visibility === 'private') {
+            const err = new Error('Photos masquées');
+            err.code = 'PHOTOS_HIDDEN';
+            throw err;
+        }
+        if (!isOwner && visibility === 'on_request') {
+            const status = await this.getAccessStatus(ownerId, user.id);
+            if (status !== 'approved') {
+                const err = new Error('Photos masquées');
+                err.code = 'PHOTOS_HIDDEN';
+                throw err;
+            }
+        }
+
+        // Prefer client-side signed URLs (needs Storage SELECT policy)
+        try {
+            const photos = await this.listPhotos(ownerId);
+            const urls = [];
+            for (const photo of photos) {
+                const { data: signed, error: signErr } = await supabase.storage
+                    .from('profile-photos')
+                    .createSignedUrl(photo.storage_path, 3600);
+                if (!signErr && signed?.signedUrl) {
+                    urls.push({ id: photo.id, url: signed.signedUrl, sort_order: photo.sort_order });
+                }
+            }
+            if (urls.length || photos.length === 0) return urls;
+        } catch (clientErr) {
+            console.warn('client photo urls:', clientErr);
+        }
+
+        // Fallback: Netlify admin signed URLs
         const header = await authHeader();
-        if (!header) throw new Error('Non connecté');
+        if (!header) {
+            const err = new Error('Photos masquées');
+            err.code = 'PHOTOS_HIDDEN';
+            throw err;
+        }
         const res = await fetch('/api/photo-url', {
             method: 'POST',
             headers: {

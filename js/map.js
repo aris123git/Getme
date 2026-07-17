@@ -172,7 +172,7 @@ async function showUserProfile(userId, username) {
         '<p class="profile-public-bio">' + escapeHtml(profile?.bio || 'Aucune bio') + '</p>' +
         '<p class="profile-public-status">' + getAvailabilityLabel(profile?.availability) + '</p>' +
         '<p class="profile-public-status">' + formatLastSeen(profile?.last_seen) + '</p>' +
-        '<div id="profilePublicGallery" class="profile-public-gallery"></div>' +
+        '<div id="profilePublicGallery" class="profile-public-gallery" aria-label="Galerie photos"></div>' +
         '<div class="confirm-actions profile-public-actions">' +
         '<button class="secondary" id="closeModalBtn">Fermer</button>' +
         '<button class="secondary" id="profileReportBtn">Signaler</button>' +

@@ -1005,6 +1005,36 @@ input[type="range"]::-webkit-slider-thumb {
   align-items: center;
 }
 
+.gallery-heading {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--text1);
+  text-align: left;
+}
+
+.viewer-gallery .gallery-item {
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.photo-lightbox-inner {
+  max-width: min(92vw, 420px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+.photo-lightbox-inner img {
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--r-md);
+  background: #000;
+}
+
 .balance-panel {
   margin-top: 12px;
   padding: 18px;

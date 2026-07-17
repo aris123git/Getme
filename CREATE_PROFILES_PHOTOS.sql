@@ -235,11 +235,31 @@ CREATE POLICY "profile_photos_delete_own" ON storage.objects
 -- Les autres passent par la Netlify function /api/photo-url (signed URL)
 -- après contrôle photo_visibility + photo_access_requests.
 DROP POLICY IF EXISTS "profile_photos_select_own" ON storage.objects;
-CREATE POLICY "profile_photos_select_own" ON storage.objects
+DROP POLICY IF EXISTS "profile_photos_select_visible" ON storage.objects;
+CREATE POLICY "profile_photos_select_visible" ON storage.objects
   FOR SELECT TO authenticated
   USING (
     bucket_id = 'profile-photos'
-    AND (storage.foldername(name))[1] = auth.uid()::text
+    AND (
+      (storage.foldername(name))[1] = auth.uid()::text
+      OR EXISTS (
+        SELECT 1 FROM public.profiles p
+        WHERE p.id::text = (storage.foldername(name))[1]
+          AND p.photo_visibility = 'public'
+          AND coalesce(p.banned, false) = false
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM public.profiles p
+        JOIN public.photo_access_requests r
+          ON r.owner_id = p.id
+         AND r.requester_id = auth.uid()
+         AND r.status = 'approved'
+        WHERE p.id::text = (storage.foldername(name))[1]
+          AND p.photo_visibility = 'on_request'
+          AND coalesce(p.banned, false) = false
+      )
+    )
   );
 
 -- Garder aussi le bucket avatars public pour la photo de profil principale

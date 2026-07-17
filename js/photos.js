@@ -163,24 +163,47 @@ export async function loadAccessRequestsPanel() {
 
 export async function renderViewerGallery(ownerId, container) {
     if (!container) return;
-    container.innerHTML = '<div class="info-card loading">Photos…</div>';
+    container.innerHTML = '<div class="info-card loading">Chargement des photos…</div>';
     try {
         const urls = await api.fetchPhotoUrls(ownerId);
         if (!urls.length) {
-            container.innerHTML = '<div class="info-card">Pas de photos</div>';
+            container.innerHTML = '<div class="info-card">Pas encore de photos</div>';
             return;
         }
-        container.innerHTML = `<div class="photo-gallery viewer-gallery">${
-            urls.map(u => `<div class="gallery-item"><img src="${escapeHtml(u.url)}" alt=""></div>`).join('')
-        }</div>`;
+        container.innerHTML = `
+            <h4 class="gallery-heading">Photos</h4>
+            <div class="photo-gallery viewer-gallery">${
+                urls.map(u => `<button type="button" class="gallery-item gallery-open" data-url="${escapeHtml(u.url)}">
+                    <img src="${escapeHtml(u.url)}" alt="Photo">
+                </button>`).join('')
+            }</div>`;
+        container.querySelectorAll('.gallery-open').forEach(btn => {
+            btn.onclick = () => {
+                const url = btn.dataset.url;
+                if (!url) return;
+                const overlay = document.createElement('div');
+                overlay.className = 'confirm-overlay photo-lightbox';
+                overlay.innerHTML = `<div class="photo-lightbox-inner"><img src="${escapeHtml(url)}" alt=""><button type="button" class="secondary">Fermer</button></div>`;
+                document.body.appendChild(overlay);
+                overlay.querySelector('button').onclick = () => overlay.remove();
+                overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+            };
+        });
     } catch (err) {
         if (err.code === 'PHOTOS_HIDDEN' || err.code === 403) {
+            let status = null;
+            try {
+                if (appState.user) status = await api.getAccessStatus(ownerId, appState.user.id);
+            } catch { /* ignore */ }
+            const pending = status === 'pending';
             container.innerHTML = `<div class="info-card photo-locked">
-                <p>Photos masquées</p>
-                <button type="button" class="secondary small" id="requestPhotoAccessBtn">Demander l’accès</button>
+                <p>Photos masquées (${pending ? 'demande en attente' : 'privé / sur demande'})</p>
+                <button type="button" class="secondary small" id="requestPhotoAccessBtn" ${pending ? 'disabled' : ''}>
+                    ${pending ? 'Demande envoyée' : 'Demander l’accès'}
+                </button>
             </div>`;
             const btn = container.querySelector('#requestPhotoAccessBtn');
-            if (btn && appState.user) {
+            if (btn && appState.user && !pending) {
                 btn.onclick = async () => {
                     try {
                         await api.requestPhotoAccess(ownerId, appState.user.id);
@@ -194,6 +217,7 @@ export async function renderViewerGallery(ownerId, container) {
             }
             return;
         }
-        container.innerHTML = '<div class="info-card">Photos indisponibles</div>';
+        console.error('renderViewerGallery:', err);
+        container.innerHTML = '<div class="info-card">Photos indisponibles — vérifiez FIX_VIEW_OTHERS_PHOTOS.sql</div>';
     }
 }
