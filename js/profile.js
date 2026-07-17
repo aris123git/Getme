@@ -105,7 +105,7 @@ export async function updateProfile() {
         showNotification('Profil mis à jour !');
         document.getElementById('userName').innerText = username;
         updateMetaLine({ ...payload, age: payload.age });
-        loadNearbyUsers();
+        loadNearbyUsers({ force: true });
     } catch (err) {
         console.error('updateProfile:', err);
         showNotification(err.message || 'Erreur lors de la sauvegarde — vérifiez le SQL Supabase', true);
@@ -120,7 +120,7 @@ export async function uploadAvatar(file) {
         const name = document.getElementById('profileName')?.value || 'G';
         setAvatarPreview(url, name);
         showNotification('Photo de profil mise à jour !');
-        loadNearbyUsers();
+        loadNearbyUsers({ force: true });
     } catch (err) {
         console.error('uploadAvatar:', err);
         showNotification(err.message || "Échec de l'upload", true);
@@ -170,7 +170,7 @@ export async function unlockUser(targetId, targetName) {
         });
         if (error) throw error;
         showNotification(`${targetName} débloqué (mode test)`);
-        loadNearbyUsers();
+        loadNearbyUsers({ force: true });
     } catch (err) {
         console.error('unlockUser:', err);
         showNotification('Erreur technique', true);
@@ -186,7 +186,7 @@ export async function blockUser(targetId) {
         });
         if (error) throw error;
         showNotification('Utilisateur bloqué');
-        loadNearbyUsers();
+        loadNearbyUsers({ force: true });
     } catch (err) {
         console.error('blockUser:', err);
         showNotification('Erreur lors du blocage — exécutez CREATE_PROFILES_PHOTOS.sql', true);

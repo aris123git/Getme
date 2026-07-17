@@ -759,7 +759,7 @@ input[type="range"]::-webkit-slider-thumb {
   gap: 12px;
   align-items: center;
   transition: border-color 0.2s, transform 0.2s;
-  animation: tabIn 0.25s ease both;
+  /* No enter animation — GPS refreshes used to replay tabIn and make names blink */
   cursor: pointer;
 }
 .user-card:hover {

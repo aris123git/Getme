@@ -8,6 +8,32 @@ import { reportUser, blockUser } from './profile.js';
 import { startChat } from './chat.js';
 let map = null;
 let userMarkers = [];
+let myLocationMarker = null;
+let mapCenteredOnce = false;
+let nearbyRenderKey = '';
+let nearbyLoadInFlight = null;
+let lastNearbyFetchAt = 0;
+
+const NEARBY_REFRESH_MIN_MS = 4000;
+const MAP_RECENTER_MIN_MOVE_KM = 0.05;
+
+function haversineKm(a, b) {
+    if (!a || !b) return Infinity;
+    const R = 6371;
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const lat1 = a.lat * Math.PI / 180;
+    const lat2 = b.lat * Math.PI / 180;
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+function nearbyUsersKey(users) {
+    if (!users?.length) return 'empty';
+    return users.map(u =>
+        [u.user_id, u.username || '', u.avatar_url || '', u.availability || '', Number(u.distance_km || 0).toFixed(2)].join('|')
+    ).join(';');
+}
 
 export function initMap() {
     if (map) return;
@@ -56,7 +82,23 @@ function getAvailabilityLabel(availability) {
     return labels[availability] || 'Statut inconnu';
 }
 
-function updateMapWithUsers(users) {
+function syncMyLocationMarker() {
+    if (!map || !appState.position) return;
+    const latLng = [appState.position.lat, appState.position.lng];
+    if (myLocationMarker) {
+        myLocationMarker.setLatLng(latLng);
+        return;
+    }
+    myLocationMarker = L.marker(latLng, {
+        icon: L.divIcon({
+            className: 'getme-marker',
+            html: '<div style="background:#c43b5a;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(20,12,16,0.35);"></div>',
+            iconSize: [18, 18]
+        })
+    }).addTo(map).bindPopup('<b>Vous</b>');
+}
+
+function updateMapWithUsers(users, { recenter = false } = {}) {
     if (!map) {
         initMap();
         if (!map) return;
@@ -64,17 +106,7 @@ function updateMapWithUsers(users) {
 
     userMarkers.forEach(m => map.removeLayer(m));
     userMarkers = [];
-
-    if (appState.position) {
-        const myMarker = L.marker([appState.position.lat, appState.position.lng], {
-            icon: L.divIcon({
-                className: 'getme-marker',
-                html: '<div style="background:#c43b5a;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(20,12,16,0.35);"></div>',
-                iconSize: [18, 18]
-            })
-        }).addTo(map).bindPopup('<b>Vous</b>');
-        userMarkers.push(myMarker);
-    }
+    syncMyLocationMarker();
 
     users.forEach(u => {
         if (u.lat == null || u.lng == null) return;
@@ -129,10 +161,10 @@ function updateMapWithUsers(users) {
         userMarkers.push(m);
     });
 
-    if (appState.position) {
+    if (appState.position && (recenter || !mapCenteredOnce)) {
         map.setView([appState.position.lat, appState.position.lng], 14);
+        mapCenteredOnce = true;
     }
-    map.invalidateSize();
 }
 
 export async function showUserProfile(userId, username) {
@@ -204,36 +236,46 @@ export async function showUserProfile(userId, username) {
     renderViewerGallery(userId, document.getElementById('profilePublicGallery'));
 }
 
-export async function loadNearbyUsers() {
-    if (!appState.position || !appState.user) return;
+function bindNearbyCardHandlers() {
+    document.querySelectorAll('#nearbyList .chat-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            startChat(btn.dataset.id, btn.dataset.name);
+        };
+    });
 
-    const radius = parseFloat(document.getElementById('radiusKm')?.value || DEFAULT_RADIUS);
-    const radiusEl = document.getElementById('radiusValue');
-    if (radiusEl) radiusEl.innerHTML = radius + ' km';
+    document.querySelectorAll('#nearbyList .profile-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            showUserProfile(btn.dataset.id, btn.dataset.name);
+        };
+    });
 
+    document.querySelectorAll('#nearbyList .user-card').forEach(card => {
+        card.onclick = () => showUserProfile(card.dataset.id, card.dataset.name);
+    });
+}
+
+function patchNearbyDistances(users) {
     const container = document.getElementById('nearbyList');
-    if (container) container.innerHTML = '<div class="info-card loading">Recherche…</div>';
+    if (!container) return;
+    users.forEach(u => {
+        const card = container.querySelector('.user-card[data-id="' + u.user_id + '"]');
+        if (!card) return;
+        const lines = card.querySelectorAll('.user-distance');
+        if (lines[0]) lines[0].textContent = formatDistance(u.distance_km);
+        if (lines[1]) lines[1].textContent = formatLastSeen(u.last_seen);
+        if (lines[2]) lines[2].textContent = getAvailabilityLabel(u.availability);
+    });
+}
 
-    let users;
-    try {
-        users = await api.getNearbyUsers(
-            appState.position.lat,
-            appState.position.lng,
-            radius,
-            appState.user.id
-        );
-    } catch (err) {
-        console.error('loadNearbyUsers:', err);
-        showNotification('Impossible de charger les personnes proches', true);
-        if (container) container.innerHTML = '<div class="info-card">Erreur réseau — réessayez</div>';
-        return;
-    }
-
-    setState('nearbyUsers', users);
+function renderNearbyList(users) {
+    const container = document.getElementById('nearbyList');
+    if (!container) return;
 
     if (!users || users.length === 0) {
-        if (container) container.innerHTML = '<div class="info-card">Personne à proximité pour le moment</div>';
-        updateMapWithUsers([]);
+        container.innerHTML = '<div class="info-card">Personne à proximité pour le moment</div>';
+        nearbyRenderKey = 'empty';
         return;
     }
 
@@ -257,31 +299,92 @@ export async function loadNearbyUsers() {
             '</div>' +
             '</div>';
     }
-    if (container) container.innerHTML = html;
-
-    updateMapWithUsers(users);
-
-    document.querySelectorAll('#nearbyList .chat-btn').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            startChat(btn.dataset.id, btn.dataset.name);
-        };
-    });
-
-    document.querySelectorAll('#nearbyList .profile-btn').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            showUserProfile(btn.dataset.id, btn.dataset.name);
-        };
-    });
-
-    // Click card / avatar / name → open full profile (bio, photos…)
-    document.querySelectorAll('#nearbyList .user-card').forEach(card => {
-        card.onclick = () => showUserProfile(card.dataset.id, card.dataset.name);
-    });
+    container.innerHTML = html;
+    bindNearbyCardHandlers();
+    nearbyRenderKey = nearbyUsersKey(users);
 }
 
-export const debouncedLoadNearby = debounce(loadNearbyUsers, 300);
+/**
+ * @param {{ silent?: boolean, force?: boolean }} [opts]
+ * silent: refresh GPS — no "Recherche…" flash, skip if unchanged
+ * force: ignore throttle (radius change, unblock, etc.)
+ */
+export async function loadNearbyUsers(opts = {}) {
+    const silent = !!opts.silent;
+    const force = !!opts.force;
+
+    if (!appState.position || !appState.user) return;
+
+    const now = Date.now();
+    if (!force && silent && now - lastNearbyFetchAt < NEARBY_REFRESH_MIN_MS) {
+        syncMyLocationMarker();
+        return nearbyLoadInFlight || Promise.resolve();
+    }
+
+    if (nearbyLoadInFlight) return nearbyLoadInFlight;
+
+    const radius = parseFloat(document.getElementById('radiusKm')?.value || DEFAULT_RADIUS);
+    const radiusEl = document.getElementById('radiusValue');
+    if (radiusEl) radiusEl.textContent = radius + ' km';
+
+    const container = document.getElementById('nearbyList');
+    const hasCards = !!(container && container.querySelector('.user-card'));
+    // Only show loading placeholder on first search — never wipe existing names
+    if (container && !silent && !hasCards) {
+        container.innerHTML = '<div class="info-card loading">Recherche…</div>';
+    }
+
+    nearbyLoadInFlight = (async () => {
+        let users;
+        try {
+            users = await api.getNearbyUsers(
+                appState.position.lat,
+                appState.position.lng,
+                radius,
+                appState.user.id
+            );
+        } catch (err) {
+            console.error('loadNearbyUsers:', err);
+            if (!silent) {
+                showNotification('Impossible de charger les personnes proches', true);
+                if (container && !hasCards) {
+                    container.innerHTML = '<div class="info-card">Erreur réseau — réessayez</div>';
+                }
+            }
+            return;
+        }
+
+        lastNearbyFetchAt = Date.now();
+        setState('nearbyUsers', users || []);
+
+        const nextKey = nearbyUsersKey(users);
+        const identityKey = (users || []).map(u => (u.user_id + '|' + (u.username || '') + '|' + (u.avatar_url || ''))).join(';') || 'empty';
+        const prevIdentity = (nearbyRenderKey || '').split(';').map(row => row.split('|').slice(0, 3).join('|')).join(';');
+
+        if (silent && identityKey === prevIdentity && hasCards) {
+            // Same people — update distance/status text only, no DOM rebuild
+            patchNearbyDistances(users || []);
+            nearbyRenderKey = nextKey;
+            updateMapWithUsers(users || [], { recenter: false });
+            return;
+        }
+
+        if (nextKey === nearbyRenderKey && hasCards) {
+            updateMapWithUsers(users || [], { recenter: false });
+            return;
+        }
+
+        renderNearbyList(users || []);
+        updateMapWithUsers(users || [], { recenter: !silent && !mapCenteredOnce });
+    })().finally(() => {
+        nearbyLoadInFlight = null;
+    });
+
+    return nearbyLoadInFlight;
+}
+
+export const debouncedLoadNearby = debounce(() => loadNearbyUsers({ force: true }), 400);
+export const debouncedSilentNearby = debounce(() => loadNearbyUsers({ silent: true }), 1200);
 
 export function startGeolocation() {
     if (!navigator.geolocation) {
@@ -290,12 +393,16 @@ export function startGeolocation() {
     }
     if (appState.watchId) stopGeolocation();
 
+    mapCenteredOnce = false;
+    nearbyRenderKey = '';
+    lastNearbyFetchAt = 0;
+
     document.getElementById('gpsStatus').innerHTML = 'Recherche GPS…';
     document.getElementById('enableGpsBtn').classList.add('hidden');
     document.getElementById('stopGpsBtn').classList.remove('hidden');
 
-    // ✅ CORRECTION : Timeout pour éviter le blocage infini
     let resolved = false;
+    let lastSyncedPos = null;
     const safetyTimeout = setTimeout(() => {
         if (!resolved) {
             showNotification("GPS bloqué, réessayez", true);
@@ -305,22 +412,35 @@ export function startGeolocation() {
 
     const watchId = navigator.geolocation.watchPosition(
         async (pos) => {
+            const isFirstFix = !resolved;
             resolved = true;
             clearTimeout(safetyTimeout);
             const position = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             updatePosition(position);
-            try {
-                if (appState.user?.id) {
-                    await api.updateLocation(appState.user.id, position.lat, position.lng);
-                    await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', appState.user.id);
-                }
-            } catch (err) {
-                console.error('GPS location sync:', err);
-            }
-            const statusEl = document.getElementById('gpsStatus');
-            if (statusEl) statusEl.innerHTML = `GPS actif · ${position.lat.toFixed(3)}, ${position.lng.toFixed(3)}`;
             if (!map) initMap();
-            loadNearbyUsers();
+            syncMyLocationMarker();
+
+            const movedEnough = !lastSyncedPos || haversineKm(lastSyncedPos, position) >= MAP_RECENTER_MIN_MOVE_KM;
+            if (isFirstFix || movedEnough) {
+                try {
+                    if (appState.user?.id) {
+                        await api.updateLocation(appState.user.id, position.lat, position.lng);
+                        await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', appState.user.id);
+                    }
+                    lastSyncedPos = position;
+                } catch (err) {
+                    console.error('GPS location sync:', err);
+                }
+            }
+
+            const statusEl = document.getElementById('gpsStatus');
+            if (statusEl) statusEl.textContent = `GPS actif · ${position.lat.toFixed(3)}, ${position.lng.toFixed(3)}`;
+
+            if (isFirstFix) {
+                await loadNearbyUsers({ force: true });
+            } else {
+                debouncedSilentNearby();
+            }
         },
         (err) => {
             resolved = true;
@@ -340,6 +460,11 @@ export function stopGeolocation() {
         setState('watchId', null);
     }
     setState('isGpsActive', false);
+    if (myLocationMarker && map) {
+        map.removeLayer(myLocationMarker);
+        myLocationMarker = null;
+    }
+    mapCenteredOnce = false;
     document.getElementById('gpsStatus').innerHTML = 'GPS arrêté';
     document.getElementById('enableGpsBtn').classList.remove('hidden');
     document.getElementById('stopGpsBtn').classList.add('hidden');
