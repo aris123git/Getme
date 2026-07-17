@@ -160,11 +160,24 @@ CREATE POLICY "blocks_all_own" ON public.blocks
   USING (blocker_id = auth.uid())
   WITH CHECK (blocker_id = auth.uid());
 
--- Drop first: existing RPC may have a different return type
-DROP FUNCTION IF EXISTS public.block_user(uuid, uuid);
-DROP FUNCTION IF EXISTS public.block_user(blocker uuid, blocked uuid);
+-- Drop ALL overloads of block_user (return type cannot be changed in place)
+DO $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT p.oid::regprocedure AS sig
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'block_user'
+  LOOP
+    EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig || ' CASCADE';
+  END LOOP;
+END
+$$;
 
-CREATE OR REPLACE FUNCTION public.block_user(blocker uuid, blocked uuid)
+CREATE FUNCTION public.block_user(blocker uuid, blocked uuid)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
