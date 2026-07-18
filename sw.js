@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4.6.5';
+const CACHE_VERSION = 'v4.6.6';
 const CACHE_NAME = `getme-${CACHE_VERSION}`;
 
 const urlsToCache = [

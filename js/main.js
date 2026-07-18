@@ -1,5 +1,17 @@
 import { supabase } from './supabaseClient.js';
-import { handleAuthChange, login, signUp, logout, setSignupMode } from './auth.js';
+import {
+    handleAuthChange,
+    login,
+    signUp,
+    logout,
+    setSignupMode,
+    resendConfirmationEmail,
+    requestPasswordReset,
+    updatePasswordAfterRecovery,
+    enterPasswordRecoveryMode,
+    cancelPasswordRecovery,
+    ensureProfileOnLogin
+} from './auth.js';
 import { showNotification, setTabActive, withLoading } from './ui.js';
 import { startGeolocation, stopGeolocation, centerMapOnUser, loadNearbyUsers, debouncedLoadNearby } from './map.js';
 import { loadConversations, sendMessage, closeChat, subscribeToGlobalMessages, unsubscribeFromMessages } from './chat.js';
@@ -15,7 +27,7 @@ import { initCallListeners, stopCallListeners } from './call.js';
 import { api } from './api.js';
 import { escapeHtml } from './utils.js';
 
-const CACHE_VERSION = 'v4.6.5';
+const CACHE_VERSION = 'v4.6.6';
 
 // ── AUTH LISTENERS ──
 function initAuthListeners() {
@@ -23,6 +35,10 @@ function initAuthListeners() {
     const signupBtn = document.getElementById('signupBtn');
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
+    const resendBtn = document.getElementById('resendConfirmBtn');
+    const forgotBtn = document.getElementById('forgotPasswordBtn');
+    const savePwdBtn = document.getElementById('saveNewPasswordBtn');
+    const cancelRecoveryBtn = document.getElementById('cancelRecoveryBtn');
 
     const doLogin = () => {
         setSignupMode(false);
@@ -53,6 +69,27 @@ function initAuthListeners() {
         const pwd = document.getElementById('password')?.value || '';
         signUp(email, pwd);
     };
+    if (resendBtn) {
+        resendBtn.onclick = () => {
+            const email = document.getElementById('email')?.value || '';
+            resendConfirmationEmail(email);
+        };
+    }
+    if (forgotBtn) {
+        forgotBtn.onclick = () => {
+            const email = document.getElementById('email')?.value || '';
+            requestPasswordReset(email);
+        };
+    }
+    if (savePwdBtn) {
+        savePwdBtn.onclick = () => {
+            const pwd = document.getElementById('newPassword')?.value || '';
+            updatePasswordAfterRecovery(pwd);
+        };
+    }
+    if (cancelRecoveryBtn) {
+        cancelRecoveryBtn.onclick = () => cancelPasswordRecovery();
+    }
     if (logoutBtn) logoutBtn.onclick = logout;
 }
 
@@ -365,12 +402,22 @@ async function init() {
     });
 
     // Auth listener first, then hydrate session (don't block UI on SW)
-    supabase.auth.onAuthStateChange((event) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_OUT') {
             appState.user = null;
         }
         // Skip noisy token refresh full resyncs that can flicker the UI
         if (event === 'TOKEN_REFRESHED') return;
+
+        // User opened the reset-password link from email
+        if (event === 'PASSWORD_RECOVERY') {
+            enterPasswordRecoveryMode();
+            return;
+        }
+
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+            await ensureProfileOnLogin(session.user);
+        }
         syncUserState();
     });
 

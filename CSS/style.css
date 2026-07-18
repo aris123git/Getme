@@ -298,6 +298,35 @@ body {
   margin-top: 6px;
 }
 
+.auth-confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.auth-links {
+  display: flex;
+  justify-content: center;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--ember);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 4px 8px;
+  width: auto;
+}
+.link-btn:hover { color: var(--accent2); }
+.auth-hint {
+  font-size: 13px;
+  text-align: center;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.auth-recovery { margin-top: 8px; }
+
 #authMsg {
   font-size: 13px;
   text-align: center;

@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
-  <link rel="stylesheet" href="CSS/style.css?v=4.6.5">
+  <link rel="stylesheet" href="CSS/style.css?v=4.6.6">
 </head>
 <body>
 <div class="app-shell">
@@ -88,7 +88,26 @@
           <button type="submit" id="loginBtn">Entrer</button>
           <button type="button" id="signupBtn" class="secondary">Créer un compte</button>
         </div>
+        <div id="authConfirmActions" class="auth-confirm-actions hidden">
+          <button type="button" id="resendConfirmBtn" class="secondary small">Renvoyer l’email de confirmation</button>
+        </div>
+        <div class="auth-links">
+          <button type="button" id="forgotPasswordBtn" class="link-btn">Mot de passe oublié ?</button>
+        </div>
         <p class="auth-legal">Pas de mineurs. Pas de harcèlement. Consentement obligatoire.</p>
+      </form>
+
+      <!-- Shown after clicking the password-reset link in email -->
+      <form class="auth-form auth-recovery hidden" id="authRecoveryPanel" onsubmit="return false;">
+        <div id="recoveryMsg" class="auth-hint">Nouveau mot de passe</div>
+        <label class="field">
+          <span>Nouveau mot de passe</span>
+          <input type="password" id="newPassword" placeholder="••••••••" autocomplete="new-password" minlength="6">
+        </label>
+        <div class="auth-actions">
+          <button type="button" id="saveNewPasswordBtn">Enregistrer le mot de passe</button>
+          <button type="button" id="cancelRecoveryBtn" class="secondary">Annuler</button>
+        </div>
       </form>
     </div>
   </div>
@@ -261,6 +280,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="js/main.js?v=4.6.5"></script>
+<script type="module" src="js/main.js?v=4.6.6"></script>
 </body>
 </html>
